@@ -5,7 +5,10 @@ import {
   createUserWithEmailAndPassword, 
   updateProfile,
   GoogleAuthProvider,
-  signInWithPopup
+  signInWithPopup,
+  sendEmailVerification,
+  sendPasswordResetEmail,
+  signOut
 } from 'firebase/auth';
 import { auth } from '../services/firebase';
 import { saveUser, getUserById } from '../services/firestoreService';
@@ -13,7 +16,12 @@ import { User, UserRole } from '../types';
 
 const Auth: React.FC = () => {
   const [isRegistering, setIsRegistering] = useState(false);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
+  const [needsVerification, setNeedsVerification] = useState(false);
+  const [verificationEmail, setVerificationEmail] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [unauthorizedDomain, setUnauthorizedDomain] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   
@@ -40,6 +48,7 @@ const Auth: React.FC = () => {
 
   const handleGoogleSignIn = async () => {
     setError(null);
+    setUnauthorizedDomain(null);
     setGoogleLoading(true);
     const provider = new GoogleAuthProvider();
     
@@ -47,11 +56,9 @@ const Auth: React.FC = () => {
       const result = await signInWithPopup(auth, provider);
       const fbUser = result.user;
       
-      // Check if user exists in our DB
       const existingUser = await getUserById(fbUser.uid);
       
       if (!existingUser) {
-        // Create new record for social user
         const names = fbUser.displayName?.split(' ') || ['Unknown', 'User'];
         const newUser: User = {
           id: fbUser.uid,
@@ -67,23 +74,40 @@ const Auth: React.FC = () => {
       }
     } catch (err: any) {
       console.error("Google Auth Error:", err);
-      setError(err.message || "Failed to sign in with Google");
+      if (err.code === 'auth/unauthorized-domain') {
+        setUnauthorizedDomain(window.location.hostname);
+      } else {
+        setError(err.message || "Failed to sign in with Google");
+      }
     } finally {
       setGoogleLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+    try {
+      await sendPasswordResetEmail(auth, email);
+      setResetSent(true);
+    } catch (err: any) {
+      setError(err.message || "Failed to send reset email");
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setUnauthorizedDomain(null);
     setLoading(true);
 
     try {
       if (isRegistering) {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const fbUser = userCredential.user;
-        
-        // Default avatar if none uploaded
         const finalAvatar = avatar || `https://ui-avatars.com/api/?name=${firstName}+${lastName}&background=random`;
 
         await updateProfile(fbUser, {
@@ -96,15 +120,27 @@ const Auth: React.FC = () => {
           firstName,
           lastName,
           email,
-          role: 'Editor' as UserRole, // Default new users to Editor
+          role: 'Editor' as UserRole,
           title,
           active: true,
           avatar: finalAvatar
         };
 
         await saveUser(newUser);
+        await sendEmailVerification(fbUser);
+        setVerificationEmail(email);
+        await signOut(auth);
+        setNeedsVerification(true);
       } else {
-        await signInWithEmailAndPassword(auth, email, password);
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const fbUser = userCredential.user;
+        
+        if (!fbUser.emailVerified) {
+          setVerificationEmail(fbUser.email || '');
+          await signOut(auth);
+          setNeedsVerification(true);
+          return;
+        }
       }
     } catch (err: any) {
       if (err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
@@ -117,9 +153,132 @@ const Auth: React.FC = () => {
     }
   };
 
+  // Shared wrapper for verification and reset success screens
+  const AuthNoticeScreen = ({ icon, title, message, emailText, buttonLabel, onAction }: { 
+    icon: string, title: string, message: string, emailText: string, buttonLabel: string, onAction: () => void 
+  }) => (
+    <div className="min-h-screen flex items-center justify-center bg-slate-900 p-6 relative overflow-hidden">
+      <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600 blur-[120px] rounded-full"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-600 blur-[120px] rounded-full"></div>
+      </div>
+      <div className="w-full max-w-md relative z-10">
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-blue-600 rounded-3xl shadow-xl mb-6">
+            <i className={`fas ${icon} text-3xl text-white`}></i>
+          </div>
+          <h1 className="text-3xl font-bold text-white tracking-tight">{title}</h1>
+          <p className="text-slate-400 mt-2 font-light text-sm uppercase tracking-widest">Active Strategy Security</p>
+        </div>
+        <div className="bg-white rounded-3xl shadow-2xl overflow-hidden p-8 text-center space-y-6">
+          <div className="space-y-4">
+            <p className="text-slate-600 font-light leading-relaxed">{message}</p>
+            <div className="bg-slate-50 border border-slate-100 rounded-2xl py-3 px-4 inline-block">
+              <span className="text-blue-600 font-bold font-mono text-sm">{emailText}</span>
+            </div>
+          </div>
+          <div className="pt-4 space-y-3">
+            <button 
+              onClick={onAction}
+              className="w-full py-4 bg-slate-900 text-white font-bold rounded-2xl hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/10 active:scale-95"
+            >
+              {buttonLabel}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  if (needsVerification) {
+    return (
+      <AuthNoticeScreen 
+        icon="fa-envelope-open-text"
+        title="Email Verification"
+        message="We have sent you a verification email to"
+        emailText={verificationEmail}
+        buttonLabel="Login"
+        onAction={() => {
+          setNeedsVerification(false);
+          setIsRegistering(false);
+          setIsForgotPassword(false);
+          setError(null);
+        }}
+      />
+    );
+  }
+
+  if (resetSent) {
+    return (
+      <AuthNoticeScreen 
+        icon="fa-key"
+        title="Check Your Email"
+        message="We sent you a password change link to"
+        emailText={email}
+        buttonLabel="Sign In"
+        onAction={() => {
+          setResetSent(false);
+          setIsForgotPassword(false);
+          setIsRegistering(false);
+          setError(null);
+        }}
+      />
+    );
+  }
+
+  if (isForgotPassword) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-900 p-6 relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
+          <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600 blur-[120px] rounded-full"></div>
+          <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-600 blur-[120px] rounded-full"></div>
+        </div>
+        <div className="w-full max-w-md relative z-10">
+          <div className="text-center mb-10">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl shadow-xl mb-6">
+              <i className="fas fa-unlock-keyhole text-3xl text-white"></i>
+            </div>
+            <h1 className="text-3xl font-bold text-white tracking-tight">Forgot Password</h1>
+            <p className="text-slate-400 mt-2 font-light text-sm uppercase tracking-widest">Recovery Center</p>
+          </div>
+          <div className="bg-white rounded-3xl shadow-2xl overflow-hidden p-8">
+            <form onSubmit={handleForgotPassword} className="space-y-6">
+              {error && (
+                <div className="bg-rose-50 border border-rose-100 p-3 rounded-xl flex items-center gap-3">
+                  <i className="fas fa-exclamation-circle text-rose-500 text-sm"></i>
+                  <p className="text-xs font-bold text-rose-600">{error}</p>
+                </div>
+              )}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Email Address</label>
+                <div className="relative">
+                  <i className="far fa-envelope absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                  <input required type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-11 pr-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-medium" />
+                </div>
+              </div>
+              <button 
+                type="submit" 
+                disabled={loading}
+                className="w-full py-4 bg-slate-900 text-white font-bold rounded-2xl hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/10 active:scale-95 disabled:opacity-50"
+              >
+                {loading ? <i className="fas fa-circle-notch animate-spin"></i> : 'Get Reset Link'}
+              </button>
+              <button 
+                type="button"
+                onClick={() => { setIsForgotPassword(false); setError(null); }}
+                className="w-full text-center text-xs font-bold text-slate-400 hover:text-blue-600 transition-colors uppercase tracking-widest"
+              >
+                Back to Login
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-900 p-6 relative overflow-hidden">
-      {/* Background Decor */}
       <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600 blur-[120px] rounded-full"></div>
         <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-600 blur-[120px] rounded-full"></div>
@@ -137,13 +296,13 @@ const Auth: React.FC = () => {
         <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
           <div className="flex border-b border-slate-100">
             <button 
-              onClick={() => setIsRegistering(false)}
+              onClick={() => { setIsRegistering(false); setError(null); setUnauthorizedDomain(null); }}
               className={`flex-1 py-4 text-sm font-bold transition-colors ${!isRegistering ? 'text-blue-600 border-b-2 border-blue-600' : 'text-slate-400 hover:text-slate-600'}`}
             >
               Sign In
             </button>
             <button 
-              onClick={() => setIsRegistering(true)}
+              onClick={() => { setIsRegistering(true); setError(null); setUnauthorizedDomain(null); }}
               className={`flex-1 py-4 text-sm font-bold transition-colors ${isRegistering ? 'text-blue-600 border-b-2 border-blue-600' : 'text-slate-400 hover:text-slate-600'}`}
             >
               Register
@@ -154,8 +313,23 @@ const Auth: React.FC = () => {
             <form onSubmit={handleAuth} className="space-y-6">
               {error && (
                 <div className="bg-rose-50 border border-rose-100 p-3 rounded-xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
-                  <i className="fas fa-exclamation-circle text-rose-500"></i>
+                  <i className="fas fa-exclamation-circle text-rose-500 text-sm"></i>
                   <p className="text-xs font-bold text-rose-600">{error}</p>
+                </div>
+              )}
+
+              {unauthorizedDomain && (
+                <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl space-y-3 animate-in fade-in slide-in-from-top-2">
+                  <div className="flex items-center gap-3">
+                    <i className="fas fa-shield-halved text-amber-500"></i>
+                    <p className="text-xs font-bold text-amber-800 uppercase tracking-tight">Domain Not Whitelisted</p>
+                  </div>
+                  <p className="text-[11px] text-amber-700 leading-relaxed">
+                    You need to add this domain to your Firebase Console:
+                  </p>
+                  <code className="block bg-amber-100 p-2 rounded text-[10px] font-mono text-amber-900 border border-amber-200 break-all select-all">
+                    {unauthorizedDomain}
+                  </code>
                 </div>
               )}
 
@@ -204,7 +378,18 @@ const Auth: React.FC = () => {
                   </div>
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Password</label>
+                  <div className="flex justify-between items-center ml-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Password</label>
+                    {!isRegistering && (
+                      <button 
+                        type="button"
+                        onClick={() => { setIsForgotPassword(true); setError(null); }}
+                        className="text-[9px] font-bold text-blue-600 uppercase tracking-wider hover:underline"
+                      >
+                        Forgot password?
+                      </button>
+                    )}
+                  </div>
                   <div className="relative">
                     <i className="fas fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
                     <input required type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-11 pr-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-medium" />
@@ -217,11 +402,7 @@ const Auth: React.FC = () => {
                 disabled={loading || googleLoading}
                 className="w-full py-4 bg-slate-900 text-white font-bold rounded-2xl hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/10 active:scale-95 disabled:opacity-50"
               >
-                {loading ? (
-                  <i className="fas fa-circle-notch animate-spin"></i>
-                ) : (
-                  isRegistering ? 'Create Account' : 'Sign In'
-                )}
+                {loading ? <i className="fas fa-circle-notch animate-spin"></i> : (isRegistering ? 'Create Account' : 'Sign In')}
               </button>
             </form>
 
@@ -249,10 +430,6 @@ const Auth: React.FC = () => {
                 </>
               )}
             </button>
-            
-            <p className="text-center text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-8">
-              Secured by Firebase Enterprise
-            </p>
           </div>
         </div>
       </div>

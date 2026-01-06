@@ -54,8 +54,6 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, currentUser, onA
 
   const handleToggleRole = (user: User) => {
     if (!isAdmin) return;
-    if (user.role === 'Viewer') return; // Viewers have no upgrade path per PRD
-
     const newRole: UserRole = user.role === 'Admin' ? 'Editor' : 'Admin';
     onUpdateUser({ ...user, role: newRole });
   };
@@ -67,7 +65,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, currentUser, onA
         id: `u-${Date.now()}`,
         ...formData,
         active: true,
-        avatar: `https://i.pravatar.cc/150?u=${Date.now()}`
+        avatar: `https://ui-avatars.com/api/?name=${formData.firstName}+${formData.lastName}&background=random`
       };
       onAddUser(user);
     } else if (modalMode === 'edit' && editingUserId) {
@@ -105,10 +103,18 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, currentUser, onA
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {THEMES.map(theme => {
           const owner = users.find(u => u.ownedThemeId === theme.id && u.ownershipType === 'Owner');
-          const supporting = users.filter(u => u.ownedThemeId === theme.id && u.ownershipType === 'Supporting');
+          
+          // A supporting user is someone whose primary ownedTheme is this one OR who has it in supportingPillars
+          const supporting = users.filter(u => {
+            const isPrimarySupporting = u.ownedThemeId === theme.id && u.ownershipType === 'Supporting';
+            const isSecondarySupporting = u.supportingPillars?.some(p => p.themeId === theme.id);
+            // Don't count them twice if they happen to be listed in both (though UI should prevent this)
+            // Also ensure we don't count the primary owner in the supporting list
+            return (isPrimarySupporting || isSecondarySupporting) && u.id !== owner?.id;
+          });
           
           return (
-            <div key={theme.id} className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col">
+            <div key={theme.id} className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col h-full group hover:border-blue-300 transition-colors">
               <div className="flex items-center gap-2 mb-4">
                 <span className={`w-2 h-2 rounded-full bg-${theme.color}-500`}></span>
                 <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{theme.name}</h3>
@@ -119,8 +125,8 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, currentUser, onA
                   <p className="text-[9px] font-bold text-slate-300 uppercase mb-2">Primary Owner</p>
                   {owner ? (
                     <div className="flex items-center gap-2">
-                      <img src={owner.avatar} className="w-6 h-6 rounded-full" alt="" />
-                      <span className="text-xs font-bold text-slate-700">{owner.firstName} {owner.lastName}</span>
+                      <img src={owner.avatar} className="w-6 h-6 rounded-full ring-2 ring-white bg-slate-100" alt="" />
+                      <span className="text-xs font-bold text-slate-700 truncate">{owner.firstName} {owner.lastName}</span>
                     </div>
                   ) : (
                     <p className="text-xs text-slate-300 italic font-light">Vacant</p>
@@ -129,9 +135,16 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, currentUser, onA
 
                 <div>
                   <p className="text-[9px] font-bold text-slate-300 uppercase mb-2">Supporting ({supporting.length})</p>
-                  <div className="flex -space-x-2">
+                  <div className="flex flex-wrap gap-1">
                     {supporting.map(u => (
-                      <img key={u.id} src={u.avatar} className="w-6 h-6 rounded-full border-2 border-white" title={`${u.firstName} ${u.lastName}`} alt="" />
+                      <div key={u.id} className="relative group/avatar">
+                         <img src={u.avatar} className="w-6 h-6 rounded-full border-2 border-white bg-slate-100" alt="" />
+                         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover/avatar:block z-20">
+                            <div className="bg-slate-900 text-white text-[9px] font-bold px-2 py-1 rounded whitespace-nowrap">
+                              {u.firstName} {u.lastName}
+                            </div>
+                         </div>
+                      </div>
                     ))}
                     {supporting.length === 0 && <span className="text-[10px] text-slate-300 font-light">None</span>}
                   </div>
@@ -154,13 +167,15 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, currentUser, onA
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {users.map(user => {
+            {users.length > 0 ? users.map(user => {
               const theme = THEMES.find(t => t.id === user.ownedThemeId);
+              const supportCount = user.supportingPillars?.length || 0;
+              
               return (
                 <tr key={user.id} className="hover:bg-slate-50 transition-colors">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <img src={user.avatar} className="w-10 h-10 rounded-full bg-slate-100" alt="" />
+                      <img src={user.avatar} className="w-10 h-10 rounded-full bg-slate-100 ring-2 ring-white shadow-sm" alt="" />
                       <div>
                         <p className="font-bold text-slate-900">{user.firstName} {user.lastName}</p>
                         <p className="text-xs text-slate-500 font-light">{user.title}</p>
@@ -176,7 +191,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, currentUser, onA
                       }`}>
                         {user.role}
                       </span>
-                      {isAdmin && user.role !== 'Viewer' && (
+                      {isAdmin && user.id !== currentUser.id && (
                         <button 
                           onClick={() => handleToggleRole(user)}
                           className="p-1 text-slate-300 hover:text-blue-500 transition-colors"
@@ -188,18 +203,34 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, currentUser, onA
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    {theme ? (
-                      <div className="flex items-center gap-2">
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-${theme.color}-50 text-${theme.color}-700`}>
-                          {theme.name}
-                        </span>
-                        <span className="text-[10px] font-bold text-slate-400 uppercase italic">
-                          ({user.ownershipType})
-                        </span>
-                      </div>
-                    ) : (
-                      <span className="text-xs text-slate-300 font-light">Global / Support</span>
-                    )}
+                    <div className="space-y-1">
+                      {theme ? (
+                        <div className="flex items-center gap-2">
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-${theme.color}-50 text-${theme.color}-700`}>
+                            {theme.name}
+                          </span>
+                          <span className="text-[10px] font-bold text-slate-400 uppercase italic">
+                            ({user.ownershipType})
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-slate-300 font-light">Global / General</span>
+                      )}
+                      
+                      {supportCount > 0 && (
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-[9px] font-bold text-slate-400 uppercase">Supporting:</span>
+                          {user.supportingPillars?.map(p => {
+                            const pTheme = THEMES.find(t => t.id === p.themeId);
+                            return pTheme ? (
+                              <span key={p.themeId} className={`px-1.5 py-0.5 rounded text-[8px] font-bold uppercase bg-slate-50 text-slate-500 border border-slate-100`}>
+                                {pTheme.name}
+                              </span>
+                            ) : null;
+                          })}
+                        </div>
+                      )}
+                    </div>
                   </td>
                   <td className="px-6 py-4 text-right">
                     {isAdmin && (
@@ -214,7 +245,13 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, currentUser, onA
                   </td>
                 </tr>
               );
-            })}
+            }) : (
+              <tr>
+                <td colSpan={4} className="px-6 py-12 text-center text-slate-400 italic">
+                  No registered users found.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
@@ -263,10 +300,9 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, currentUser, onA
                 <div>
                   <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Access Role</label>
                   <select 
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                     value={formData.role} 
                     onChange={e => setFormData({...formData, role: e.target.value as UserRole})}
-                    disabled={modalMode === 'edit' && formData.role === 'Viewer'}
                   >
                     <option value="Admin">Admin (Full Access)</option>
                     <option value="Editor">Editor (Bet Management)</option>
@@ -276,7 +312,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, currentUser, onA
               </div>
 
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
-                <p className="text-[10px] font-bold text-slate-800 uppercase tracking-widest border-b border-slate-200 pb-2">Strategy Alignment</p>
+                <p className="text-[10px] font-bold text-slate-800 uppercase tracking-widest border-b border-slate-200 pb-2">Primary Strategy Alignment</p>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-[9px] font-bold text-slate-400 uppercase mb-2">Area of Strategy</label>

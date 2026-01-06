@@ -6,13 +6,18 @@ import {
   setDoc, 
   getDoc,
   query,
+  deleteDoc,
+  orderBy
 } from 'firebase/firestore';
 import { db } from './firebase';
-import { Bet, User, Comment, Canvas, Outcome1Y, RhythmSession } from '../types';
+import { Bet, User, Comment, Canvas, Outcome1Y, RhythmSession, Measure } from '../types';
 
-export const subscribeToCollection = (collectionName: string, callback: (data: any[]) => void) => {
+export const subscribeToCollection = (collectionName: string, callback: (data: any[]) => void, orderField?: string) => {
   try {
-    const q = query(collection(db, collectionName));
+    const q = orderField 
+      ? query(collection(db, collectionName), orderBy(orderField, 'desc'))
+      : query(collection(db, collectionName));
+      
     return onSnapshot(q, (snapshot) => {
       const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       callback(items);
@@ -29,6 +34,10 @@ export const saveBet = async (bet: Bet) => {
   await setDoc(doc(db, 'bets', bet.id), bet);
 };
 
+export const deleteBet = async (betId: string) => {
+  await deleteDoc(doc(db, 'bets', betId));
+};
+
 export const saveUser = async (user: User) => {
   await setDoc(doc(db, 'users', user.id), user);
 };
@@ -42,6 +51,10 @@ export const getUserById = async (userId: string): Promise<User | null> => {
   return null;
 };
 
+export const deleteUserRecord = async (userId: string) => {
+  await deleteDoc(doc(db, 'users', userId));
+};
+
 export const saveComment = async (comment: Comment) => {
   await setDoc(doc(db, 'comments', comment.id), comment);
 };
@@ -52,6 +65,14 @@ export const saveCanvas = async (canvas: Canvas) => {
 
 export const saveOutcome = async (outcome: Outcome1Y) => {
   await setDoc(doc(db, 'outcomes', outcome.id), outcome);
+};
+
+export const saveMeasure = async (measure: Measure) => {
+  await setDoc(doc(db, 'measures', measure.id), measure);
+};
+
+export const deleteMeasure = async (measureId: string) => {
+  await deleteDoc(doc(db, 'measures', measureId));
 };
 
 export const saveSession = async (session: RhythmSession) => {

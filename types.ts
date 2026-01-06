@@ -9,6 +9,11 @@ export type UserRole = 'Admin' | 'Editor' | 'Viewer';
 export type OwnershipType = 'Owner' | 'Supporting';
 export type ActionProgress = 0 | 25 | 50 | 75 | 100;
 
+export interface PillarInvolvement {
+  themeId: string;
+  type: OwnershipType;
+}
+
 export interface User {
   id: string;
   firstName: string;
@@ -16,10 +21,14 @@ export interface User {
   email: string;
   role: UserRole;
   title: string;
-  ownedThemeId?: string; // Links to THEMES ids (t1, t2, t3, t4)
+  ownedThemeId?: string; // Primary Focus
   ownershipType?: OwnershipType;
+  supportingPillars?: PillarInvolvement[]; // Additional focus areas
   active: boolean;
   avatar?: string;
+  bio?: string;
+  timezone?: string;
+  linkedinUrl?: string;
 }
 
 export interface Theme {

@@ -2,7 +2,17 @@
 import React, { useState, useEffect } from 'react';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { auth } from './services/firebase';
-import { getUserById } from './services/firestoreService';
+import { 
+  getUserById, 
+  saveUser, 
+  subscribeToCollection, 
+  saveBet, 
+  saveOutcome, 
+  saveMeasure, 
+  deleteMeasure,
+  saveComment,
+  saveSession
+} from './services/firestoreService';
 import Layout from './components/Layout';
 import Dashboard from './components/Dashboard';
 import Canvas from './components/Canvas';
@@ -14,7 +24,8 @@ import BetDetail from './components/BetDetail';
 import BetCreate from './components/BetCreate';
 import UserManagement from './components/UserManagement';
 import Auth from './components/Auth';
-import { INITIAL_CANVAS, INITIAL_BETS, INITIAL_OUTCOMES, RHYTHM_SESSIONS, INITIAL_COMMENTS, INITIAL_MEASURES } from './mockData';
+import Profile from './components/Profile';
+import { INITIAL_CANVAS } from './mockData';
 import { Bet, User, Comment, RhythmSession, Outcome1Y, Measure, CanvasSnapshot, Canvas as CanvasType } from './types';
 
 const App: React.FC = () => {
@@ -22,13 +33,13 @@ const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
 
-  // App State (Mock data until fully synced with Firestore)
+  // Live App State from Firestore
   const [users, setUsers] = useState<User[]>([]);
-  const [bets, setBets] = useState<Bet[]>(INITIAL_BETS);
-  const [outcomes, setOutcomes] = useState<Outcome1Y[]>(INITIAL_OUTCOMES);
-  const [measures, setMeasures] = useState<Measure[]>(INITIAL_MEASURES);
-  const [comments, setComments] = useState<Comment[]>(INITIAL_COMMENTS);
-  const [sessions, setSessions] = useState<RhythmSession[]>(RHYTHM_SESSIONS);
+  const [bets, setBets] = useState<Bet[]>([]);
+  const [outcomes, setOutcomes] = useState<Outcome1Y[]>([]);
+  const [measures, setMeasures] = useState<Measure[]>([]);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [sessions, setSessions] = useState<RhythmSession[]>([]);
   const [snapshots, setSnapshots] = useState<CanvasSnapshot[]>([]);
   const [canvas, setCanvas] = useState<CanvasType>(INITIAL_CANVAS);
   
@@ -36,16 +47,15 @@ const App: React.FC = () => {
   const [selectedOutcome, setSelectedOutcome] = useState<Outcome1Y | null>(null);
   const [isCreatingBet, setIsCreatingBet] = useState(false);
 
+  // Auth Listener
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
       if (fbUser) {
-        // Fetch extended user data from Firestore
         const userData = await getUserById(fbUser.uid);
         if (userData) {
           setCurrentUser(userData);
         } else {
-          // Fallback if firestore document hasn't propagated yet
-          setCurrentUser({
+          const fallbackUser: User = {
             id: fbUser.uid,
             firstName: fbUser.displayName?.split(' ')[0] || 'Unknown',
             lastName: fbUser.displayName?.split(' ')[1] || 'User',
@@ -53,8 +63,10 @@ const App: React.FC = () => {
             role: 'Editor',
             title: 'Team Member',
             active: true,
-            avatar: fbUser.photoURL || undefined
-          });
+            avatar: fbUser.photoURL || `https://ui-avatars.com/api/?name=${fbUser.displayName || 'User'}&background=random`
+          };
+          setCurrentUser(fallbackUser);
+          await saveUser(fallbackUser);
         }
       } else {
         setCurrentUser(null);
@@ -65,11 +77,32 @@ const App: React.FC = () => {
     return () => unsubscribe();
   }, []);
 
+  // Real-time Global Data Subscriptions
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const unsubUsers = subscribeToCollection('users', (data) => setUsers(data as User[]));
+    const unsubBets = subscribeToCollection('bets', (data) => setBets(data as Bet[]), 'updated_at');
+    const unsubOutcomes = subscribeToCollection('outcomes', (data) => setOutcomes(data as Outcome1Y[]));
+    const unsubMeasures = subscribeToCollection('measures', (data) => setMeasures(data as Measure[]));
+    const unsubComments = subscribeToCollection('comments', (data) => setComments(data as Comment[]), 'created_at');
+    const unsubSessions = subscribeToCollection('sessions', (data) => setSessions(data as RhythmSession[]), 'scheduled_at');
+
+    return () => {
+      unsubUsers();
+      unsubBets();
+      unsubOutcomes();
+      unsubMeasures();
+      unsubComments();
+      unsubSessions();
+    };
+  }, [currentUser]);
+
   const handleLogout = async () => {
     await signOut(auth);
   };
 
-  const handleAddComment = (entityType: Comment['entity_type'], entityId: string, body: string) => {
+  const handleAddComment = async (entityType: Comment['entity_type'], entityId: string, body: string) => {
     if (!currentUser) return;
     const newComment: Comment = {
       id: `c-${Date.now()}`,
@@ -81,7 +114,7 @@ const App: React.FC = () => {
       body,
       created_at: new Date().toISOString(),
     };
-    setComments([...comments, newComment]);
+    await saveComment(newComment);
   };
 
   const handleCreateSnapshot = (currentCanvas: CanvasType) => {
@@ -100,55 +133,62 @@ const App: React.FC = () => {
       }))
     };
     setSnapshots([...snapshots, newSnapshot]);
-    alert("Strategic Snapshot created and archived.");
+    alert("Strategic Snapshot created and archived locally.");
   };
 
-  const handleUpdateOutcome = (updatedOutcome: Outcome1Y) => {
-    setOutcomes(outcomes.map(o => o.id === updatedOutcome.id ? updatedOutcome : o));
+  const handleUpdateOutcome = async (updatedOutcome: Outcome1Y) => {
+    await saveOutcome(updatedOutcome);
     setSelectedOutcome(null);
   };
 
-  const handleAddMeasure = (newMeasure: Measure) => {
-    setMeasures([...measures, newMeasure]);
+  const handleAddMeasure = async (newMeasure: Measure) => {
+    await saveMeasure(newMeasure);
   };
 
-  const handleUpdateMeasure = (updatedMeasure: Measure) => {
-    setMeasures(measures.map(m => m.id === updatedMeasure.id ? updatedMeasure : m));
+  const handleUpdateMeasure = async (updatedMeasure: Measure) => {
+    await saveMeasure(updatedMeasure);
   };
 
-  const handleDeleteMeasure = (id: string) => {
-    setMeasures(measures.filter(m => m.id !== id));
+  const handleDeleteMeasure = async (id: string) => {
+    await deleteMeasure(id);
   };
 
-  const handleAddSession = (newSession: RhythmSession) => {
-    setSessions([...sessions, newSession]);
+  const handleAddSession = async (newSession: RhythmSession) => {
+    await saveSession(newSession);
   };
 
-  const handleUpdateSession = (updatedSession: RhythmSession) => {
-    setSessions(sessions.map(s => s.id === updatedSession.id ? updatedSession : s));
+  const handleUpdateSession = async (updatedSession: RhythmSession) => {
+    await saveSession(updatedSession);
   };
 
   const handleAddUser = (user: User) => {
-    setUsers([...users, user]);
+    saveUser(user);
   };
 
   const handleUpdateUser = (updatedUser: User) => {
-    const newUsers = users.map(u => u.id === updatedUser.id ? updatedUser : u);
-    setUsers(newUsers);
+    saveUser(updatedUser);
     if (currentUser?.id === updatedUser.id) {
       setCurrentUser(updatedUser);
     }
   };
 
-  const handleCreateBet = (newBet: Bet) => {
-    setBets([newBet, ...bets]);
+  const handleCreateBet = async (newBet: Bet) => {
+    await saveBet(newBet);
     setIsCreatingBet(false);
     setSelectedBet(newBet);
   };
 
+  const handleUpdateBet = async (updatedBet: Bet) => {
+    updatedBet.updated_at = new Date().toISOString();
+    await saveBet(updatedBet);
+    setSelectedBet(null);
+  };
+
   const switchUser = (role: User['role']) => {
     if (currentUser) {
-      setCurrentUser({ ...currentUser, role });
+      const updated = { ...currentUser, role };
+      setCurrentUser(updated);
+      saveUser(updated);
     }
   };
 
@@ -218,6 +258,13 @@ const App: React.FC = () => {
             onUpdateUser={handleUpdateUser}
           />
         );
+      case 'profile':
+        return (
+          <Profile 
+            currentUser={currentUser} 
+            onUpdateUser={handleUpdateUser} 
+          />
+        );
       default:
         return <Dashboard bets={bets} outcomes={outcomes} sessions={sessions} currentUser={currentUser} />;
     }
@@ -241,10 +288,7 @@ const App: React.FC = () => {
         <BetDetail 
           bet={selectedBet} 
           onClose={() => setSelectedBet(null)} 
-          onUpdate={(updatedBet) => {
-            setBets(bets.map(b => b.id === updatedBet.id ? updatedBet : b));
-            setSelectedBet(null);
-          }}
+          onUpdate={handleUpdateBet}
           currentUser={currentUser}
           comments={comments}
           onAddComment={(body) => handleAddComment('Bet', selectedBet.id, body)}

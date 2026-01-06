@@ -66,10 +66,20 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, curr
           </div>
         </div>
 
-        <div className="p-6 border-t border-slate-800">
-          <div className="flex items-center gap-3">
+        <div className="p-6 border-t border-slate-800 space-y-4">
+          <button 
+            onClick={() => setActiveTab('profile')}
+            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-bold transition-colors ${
+              activeTab === 'profile' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'
+            }`}
+          >
+            <i className="fas fa-cog"></i>
+            Profile & Settings
+          </button>
+          
+          <div className="flex items-center gap-3 px-1">
             <div className="w-10 h-10 rounded-full bg-slate-700 overflow-hidden ring-2 ring-blue-500/20">
-              <img src={currentUser.avatar} alt={`${currentUser.firstName} ${currentUser.lastName}`} />
+              <img src={currentUser.avatar} alt={`${currentUser.firstName} ${currentUser.lastName}`} className="w-full h-full object-cover" />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold truncate">{currentUser.firstName} {currentUser.lastName}</p>
