@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { Bet, User, Comment, BetAction, ActionProgress } from '../types';
-import { THEMES, BET_STAGES, TIMEBOXES } from '../constants';
+import { Bet, User, Comment, BetAction, ActionProgress, Theme } from '../types';
+import { BET_STAGES, TIMEBOXES } from '../constants';
 import { tightenHypothesis } from '../services/geminiService';
 import CommentList from './CommentList';
 import StrategicCouncil from './StrategicCouncil';
@@ -10,34 +10,47 @@ interface BetDetailProps {
   bet: Bet;
   onClose: () => void;
   onUpdate: (bet: Bet) => void;
+  onDelete: (id: string) => void;
+  onArchive: (bet: Bet) => void;
+  onSaveTask: (task: BetAction) => void;
+  onDeleteTask: (taskId: string) => void;
   currentUser: User;
   comments: Comment[];
   onAddComment: (body: string) => void;
   users?: User[]; 
+  themes: Theme[];
 }
 
-const BetDetail: React.FC<BetDetailProps> = ({ bet, onClose, onUpdate, currentUser, comments, onAddComment, users = [] }) => {
+const BetDetail: React.FC<BetDetailProps> = ({ bet, onClose, onUpdate, onDelete, onArchive, onSaveTask, onDeleteTask, currentUser, comments, onAddComment, users = [], themes }) => {
   const [activeBet, setActiveBet] = useState(bet);
   const [activeTab, setActiveTab] = useState('overview');
   const [isTightening, setIsTightening] = useState(false);
   const [editingAction, setEditingAction] = useState<BetAction | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const canEdit = currentUser.role === 'Admin' || currentUser.role === 'Editor';
-  const theme = THEMES.find(t => t.id === activeBet.theme_id);
+  const theme = themes.find(t => t.id === activeBet.theme_id);
+  const isArchived = activeBet.stage === 'Archived';
 
+  // Sync state if prop changes (e.g., from Firestore subscription)
+  useEffect(() => {
+    setActiveBet(bet);
+  }, [bet]);
+
+  // Calculate overall progress based on task cumulative percentages
   useEffect(() => {
     if (activeBet.actions.length > 0) {
       const totalProgress = activeBet.actions.reduce((acc, curr) => acc + curr.progress, 0);
       const averageProgress = Math.round(totalProgress / activeBet.actions.length);
       if (averageProgress !== activeBet.progress) {
-        setActiveBet(prev => ({ ...prev, progress: averageProgress }));
+        onUpdate({ ...activeBet, progress: averageProgress });
       }
     } else {
       if (activeBet.progress !== 0) {
-        setActiveBet(prev => ({ ...prev, progress: 0 }));
+        onUpdate({ ...activeBet, progress: 0 });
       }
     }
-  }, [activeBet.actions]);
+  }, [activeBet.actions.map(a => a.progress).join(',')]);
 
   const handleTighten = async () => {
     if (!canEdit) return;
@@ -45,7 +58,7 @@ const BetDetail: React.FC<BetDetailProps> = ({ bet, onClose, onUpdate, currentUs
     try {
       const tightened = await tightenHypothesis(activeBet.problem_statement, activeBet.hypothesis);
       if (tightened) {
-        setActiveBet({ ...activeBet, hypothesis: tightened });
+        onUpdate({ ...activeBet, hypothesis: tightened });
       }
     } catch (e) {
       console.error(e);
@@ -60,17 +73,10 @@ const BetDetail: React.FC<BetDetailProps> = ({ bet, onClose, onUpdate, currentUs
     return val;
   };
 
-  const handleUpdateAction = (id: string, updates: Partial<BetAction>) => {
-    const newActions = activeBet.actions.map(a => a.id === id ? { ...a, ...updates } : a);
-    setActiveBet({ ...activeBet, actions: newActions });
-    if (editingAction && editingAction.id === id) {
-      setEditingAction({ ...editingAction, ...updates });
-    }
-  };
-
   const handleAddAction = () => {
     const newAction: BetAction = {
       id: `a-${Date.now()}`,
+      bet_id: activeBet.id,
       title: 'New Strategic Task',
       description: '',
       tshirt_size: 'M',
@@ -78,21 +84,35 @@ const BetDetail: React.FC<BetDetailProps> = ({ bet, onClose, onUpdate, currentUs
       start_date: new Date().toISOString().split('T')[0],
       due_date: new Date().toISOString().split('T')[0]
     };
-    setActiveBet(prev => ({ ...prev, actions: [...prev.actions, newAction] }));
+    // Don't save immediately, just open the editor with this draft
     setEditingAction(newAction);
+  };
+
+  const handleUpdateActionLocal = (updates: Partial<BetAction>) => {
+    if (!editingAction) return;
+    setEditingAction({ ...editingAction, ...updates });
+  };
+
+  const handleDoneEditing = () => {
+    if (editingAction) {
+      onSaveTask(editingAction);
+      setEditingAction(null);
+    }
   };
 
   const handleRemoveAction = (id: string) => {
     if (window.confirm('Remove this strategic task?')) {
-      setActiveBet(prev => ({ ...prev, actions: prev.actions.filter(a => a.id !== id) }));
+      onDeleteTask(id);
     }
   };
+
+  const progressSteps: ActionProgress[] = [0, 25, 50, 75, 100];
 
   return (
     <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex justify-end">
       <div className="w-full max-w-3xl bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
         
-        {/* Screenshot-Matched Header */}
+        {/* Header */}
         <header className="px-8 pt-8 pb-6 border-b border-slate-100 bg-white relative">
           <button 
             onClick={onClose} 
@@ -104,7 +124,7 @@ const BetDetail: React.FC<BetDetailProps> = ({ bet, onClose, onUpdate, currentUs
           <div className="flex justify-between items-start pl-8">
             <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <span className={`px-2 py-1 rounded bg-blue-50 text-blue-600 text-[10px] font-bold uppercase tracking-widest`}>
+                <span className={`px-2 py-1 rounded bg-${theme?.color || 'blue'}-50 text-${theme?.color || 'blue'}-600 text-[10px] font-bold uppercase tracking-widest`}>
                   {theme?.name || 'Theme'}
                 </span>
                 <span className="text-slate-300">•</span>
@@ -117,24 +137,45 @@ const BetDetail: React.FC<BetDetailProps> = ({ bet, onClose, onUpdate, currentUs
               </h2>
             </div>
             
-            <button 
-              onClick={() => onUpdate(activeBet)}
-              className="px-6 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 shadow-lg shadow-blue-900/20 transition-all active:scale-95"
-            >
-              Save Changes
-            </button>
+            <div className="flex items-center gap-3">
+              {canEdit && (
+                <>
+                  {!isArchived && (
+                    <button 
+                      onClick={() => onArchive(activeBet)}
+                      className="p-3 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-xl transition-all"
+                      title="Archive Bet"
+                    >
+                      <i className="fas fa-box-archive"></i>
+                    </button>
+                  )}
+                  <button 
+                    onClick={() => setShowDeleteConfirm(true)}
+                    className="p-3 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
+                    title="Delete Permanently"
+                  >
+                    <i className="fas fa-trash-alt"></i>
+                  </button>
+                </>
+              )}
+              <button 
+                onClick={() => onUpdate(activeBet)}
+                className="px-6 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 shadow-lg shadow-blue-900/20 transition-all active:scale-95"
+              >
+                Save Meta Changes
+              </button>
+            </div>
           </div>
         </header>
 
-        {/* Status Bar - Matched to Screenshot */}
+        {/* Status Bar */}
         <div className="px-8 py-3 bg-slate-50/50 border-b border-slate-200 flex items-center justify-between">
            <div className="flex items-center gap-8">
-              {/* Stage Selection */}
               <div className="flex items-center gap-2 cursor-pointer group">
                 <select 
                   disabled={!canEdit}
                   value={activeBet.stage} 
-                  onChange={(e) => setActiveBet({...activeBet, stage: e.target.value as any})}
+                  onChange={(e) => onUpdate({...activeBet, stage: e.target.value as any})}
                   className="bg-transparent font-bold text-slate-700 focus:outline-none appearance-none cursor-pointer pr-4"
                 >
                   {BET_STAGES.map(s => <option key={s} value={s}>{s}</option>)}
@@ -142,7 +183,6 @@ const BetDetail: React.FC<BetDetailProps> = ({ bet, onClose, onUpdate, currentUs
                 <i className="fas fa-chevron-down text-[10px] text-slate-400 -ml-3 pointer-events-none"></i>
               </div>
 
-              {/* Progress Bar */}
               <div className="flex items-center gap-4">
                  <div className="w-32 h-2 bg-slate-200 rounded-full overflow-hidden">
                     <div className="h-full bg-blue-600 transition-all duration-500" style={{ width: `${activeBet.progress}%` }}></div>
@@ -150,12 +190,11 @@ const BetDetail: React.FC<BetDetailProps> = ({ bet, onClose, onUpdate, currentUs
                  <span className="text-sm font-bold text-slate-700">{activeBet.progress}%</span>
               </div>
 
-              {/* Horizon Selection */}
               <div className="flex items-center gap-2 cursor-pointer group border-l border-slate-200 pl-8">
                 <select 
                    disabled={!canEdit}
                    value={activeBet.timebox}
-                   onChange={(e) => setActiveBet({...activeBet, timebox: e.target.value as any})}
+                   onChange={(e) => onUpdate({...activeBet, timebox: e.target.value as any})}
                    className="bg-transparent font-bold text-slate-700 focus:outline-none appearance-none cursor-pointer pr-4"
                 >
                    {TIMEBOXES.map(t => <option key={t} value={t}>{getTimeboxLabel(t)}</option>)}
@@ -164,7 +203,6 @@ const BetDetail: React.FC<BetDetailProps> = ({ bet, onClose, onUpdate, currentUs
               </div>
            </div>
 
-           {/* Owner Section - Fixed Icons & Names Below */}
            <div className="flex gap-4">
               {activeBet.owner_user_ids.map(ownerId => {
                 const owner = users.find(u => u.id === ownerId);
@@ -181,7 +219,7 @@ const BetDetail: React.FC<BetDetailProps> = ({ bet, onClose, onUpdate, currentUs
         </div>
 
         {/* Content Tabs */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto no-scrollbar">
           <nav className="flex px-8 border-b border-slate-100 bg-white sticky top-0 z-10 overflow-x-auto no-scrollbar">
             {['Overview', 'Bet Tasks', 'Council', 'Updates', 'Discussion', 'Learnings'].map((tab) => (
               <button
@@ -202,7 +240,6 @@ const BetDetail: React.FC<BetDetailProps> = ({ bet, onClose, onUpdate, currentUs
           </nav>
 
           <div className="p-8 space-y-8">
-            {/* Conditional Visibility Rendering for persistence */}
             <div className={activeTab === 'overview' ? 'block' : 'hidden'}>
               <div className="space-y-6">
                 <section className="bg-slate-50 p-4 rounded-xl border border-slate-200">
@@ -215,7 +252,7 @@ const BetDetail: React.FC<BetDetailProps> = ({ bet, onClose, onUpdate, currentUs
                         disabled={!canEdit}
                         className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-blue-500 outline-none"
                         value={activeBet.start_date || ''}
-                        onChange={(e) => setActiveBet({...activeBet, start_date: e.target.value})}
+                        onChange={(e) => onUpdate({...activeBet, start_date: e.target.value})}
                       />
                     </div>
                     <div>
@@ -225,7 +262,7 @@ const BetDetail: React.FC<BetDetailProps> = ({ bet, onClose, onUpdate, currentUs
                         disabled={!canEdit}
                         className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-blue-500 outline-none"
                         value={activeBet.completion_date || ''}
-                        onChange={(e) => setActiveBet({...activeBet, completion_date: e.target.value})}
+                        onChange={(e) => onUpdate({...activeBet, completion_date: e.target.value})}
                       />
                     </div>
                   </div>
@@ -236,7 +273,7 @@ const BetDetail: React.FC<BetDetailProps> = ({ bet, onClose, onUpdate, currentUs
                   <textarea 
                     disabled={!canEdit}
                     value={activeBet.problem_statement}
-                    onChange={(e) => setActiveBet({...activeBet, problem_statement: e.target.value})}
+                    onChange={(e) => onUpdate({...activeBet, problem_statement: e.target.value})}
                     className="w-full bg-slate-50 border border-slate-200 rounded-lg p-4 text-sm text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none leading-relaxed font-light"
                     rows={4}
                   />
@@ -259,7 +296,7 @@ const BetDetail: React.FC<BetDetailProps> = ({ bet, onClose, onUpdate, currentUs
                   <textarea 
                     disabled={!canEdit}
                     value={activeBet.hypothesis}
-                    onChange={(e) => setActiveBet({...activeBet, hypothesis: e.target.value})}
+                    onChange={(e) => onUpdate({...activeBet, hypothesis: e.target.value})}
                     className="w-full bg-blue-50/30 border border-blue-100 rounded-lg p-4 text-sm text-slate-800 font-medium focus:ring-2 focus:ring-blue-500 outline-none leading-relaxed"
                     rows={4}
                   />
@@ -292,10 +329,16 @@ const BetDetail: React.FC<BetDetailProps> = ({ bet, onClose, onUpdate, currentUs
                                    <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-1.5 rounded">{action.tshirt_size}</span>
                                 </div>
                                 <p className="text-xs text-slate-500 font-light line-clamp-1 mb-3">{action.description || 'No description provided.'}</p>
-                                <div className="flex items-center gap-4">
+                                <div className="flex items-center gap-6">
                                    <div className="flex items-center gap-1 text-[10px] text-slate-400 font-bold uppercase">
                                       <i className="far fa-calendar"></i>
                                       <span>{action.due_date || 'No date'}</span>
+                                   </div>
+                                   <div className="flex-1 max-w-[100px] flex items-center gap-2">
+                                      <div className="flex-1 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                                        <div className="h-full bg-blue-500" style={{ width: `${action.progress}%` }}></div>
+                                      </div>
+                                      <span className="text-[10px] font-bold text-slate-500">{action.progress}%</span>
                                    </div>
                                    {assignee && (
                                      <div className="flex items-center gap-1">
@@ -321,11 +364,15 @@ const BetDetail: React.FC<BetDetailProps> = ({ bet, onClose, onUpdate, currentUs
                         </div>
                       );
                     })}
+                    {activeBet.actions.length === 0 && (
+                      <div className="py-12 text-center bg-slate-50 border-2 border-dashed border-slate-100 rounded-2xl">
+                         <p className="text-sm text-slate-400 italic">No tasks defined for this bet.</p>
+                      </div>
+                    )}
                  </div>
                </div>
             </div>
 
-            {/* Persistent Council Memory - Always mounted but hidden if not active */}
             <div className={activeTab === 'council' ? 'block' : 'hidden'}>
               <div className="space-y-6">
                 <div className="bg-blue-50 p-6 rounded-2xl border border-blue-100 flex items-start gap-4">
@@ -396,15 +443,75 @@ const BetDetail: React.FC<BetDetailProps> = ({ bet, onClose, onUpdate, currentUs
                       type="text"
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-bold text-slate-800"
                       value={editingAction.title}
-                      onChange={(e) => handleUpdateAction(editingAction.id, { title: e.target.value })}
+                      onChange={(e) => handleUpdateActionLocal({ title: e.target.value })}
                     />
                  </div>
+                 
+                 <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Task Completion (%)</label>
+                    <div className="flex bg-slate-100 p-1 rounded-xl gap-1">
+                       {progressSteps.map((step) => (
+                         <button
+                           key={step}
+                           type="button"
+                           onClick={() => handleUpdateActionLocal({ progress: step })}
+                           className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
+                             editingAction.progress === step 
+                               ? 'bg-blue-600 text-white shadow-lg' 
+                               : 'text-slate-400 hover:text-slate-600 hover:bg-slate-200'
+                           }`}
+                         >
+                           {step}%
+                         </button>
+                       ))}
+                    </div>
+                    <p className="text-[9px] text-slate-400 mt-2 font-medium italic">Task progress increments are restricted to 25% steps.</p>
+                 </div>
+
                  <div className="pt-4">
                     <button 
-                      onClick={() => setEditingAction(null)}
-                      className="w-full py-3 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 transition-all"
+                      onClick={handleDoneEditing}
+                      className="w-full py-3 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/20"
                     >
                        Done Editing
+                    </button>
+                 </div>
+              </div>
+           </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[70] flex items-center justify-center p-4">
+           <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+              <header className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-rose-50/50">
+                 <h3 className="text-xs font-bold text-rose-800 uppercase tracking-widest flex items-center gap-2">
+                    <i className="fas fa-triangle-exclamation"></i>
+                    Confirm Permanent Deletion
+                 </h3>
+                 <button onClick={() => setShowDeleteConfirm(false)} className="text-rose-400 hover:text-rose-600 transition-colors">
+                    <i className="fas fa-times"></i>
+                 </button>
+              </header>
+              <div className="p-8 space-y-6 text-center">
+                 <p className="text-sm text-slate-600 leading-relaxed font-light">
+                    Are you sure you want to delete <strong className="text-slate-900">"{activeBet.title}"</strong>? 
+                    This action will permanently remove all associated tasks, history, and discussions from the platform.
+                 </p>
+                 
+                 <div className="flex gap-3">
+                    <button 
+                      onClick={() => setShowDeleteConfirm(false)}
+                      className="flex-1 py-3 border border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-50 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      onClick={() => { onDelete(activeBet.id); setShowDeleteConfirm(false); }}
+                      className="flex-1 py-3 bg-rose-600 text-white font-bold rounded-xl hover:bg-rose-700 shadow-lg shadow-rose-900/20 transition-all active:scale-95"
+                    >
+                      Confirm Delete
                     </button>
                  </div>
               </div>

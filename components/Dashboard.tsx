@@ -1,7 +1,6 @@
 
 import React, { useState } from 'react';
-import { Bet, Outcome1Y, RhythmSession, User } from '../types';
-import { THEMES } from '../constants';
+import { Bet, Outcome1Y, RhythmSession, User, Theme } from '../types';
 import { generateStrategyReport } from '../services/geminiService';
 import StrategyReport from './StrategyReport';
 
@@ -10,9 +9,11 @@ interface DashboardProps {
   outcomes: Outcome1Y[];
   sessions: RhythmSession[];
   currentUser: User;
+  themes: Theme[];
+  onNewBet: (themeId?: string) => void;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ bets, outcomes, sessions, currentUser }) => {
+const Dashboard: React.FC<DashboardProps> = ({ bets, outcomes, sessions, currentUser, themes, onNewBet }) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [reportData, setReportData] = useState<string | null>(null);
 
@@ -112,18 +113,21 @@ const Dashboard: React.FC<DashboardProps> = ({ bets, outcomes, sessions, current
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {orphanedOutcomes.map(o => {
-              const theme = THEMES.find(t => t.id === o.theme_id);
+              const theme = themes.find(t => t.id === o.theme_id);
               return (
                 <div key={o.id} className="bg-white p-4 rounded-xl border border-amber-100 shadow-sm flex flex-col justify-between hover:border-amber-400 transition-colors cursor-default">
                   <div>
-                    <span className={`text-[9px] font-bold uppercase text-${theme?.color}-600 bg-${theme?.color}-50 px-1.5 py-0.5 rounded mb-2 inline-block`}>
-                      {theme?.name}
+                    <span className={`text-[9px] font-bold uppercase text-${theme?.color || 'slate'}-600 bg-${theme?.color || 'slate'}-50 px-1.5 py-0.5 rounded mb-2 inline-block`}>
+                      {theme?.name || 'Unassigned'}
                     </span>
                     <h4 className="font-bold text-slate-800 text-sm leading-snug">{o.title}</h4>
                     <p className="text-[11px] text-slate-500 mt-1 line-clamp-1 italic font-light">{o.description}</p>
                   </div>
                   <div className="mt-3 flex justify-end">
-                    <button className="text-[10px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1">
+                    <button 
+                      onClick={() => onNewBet(o.theme_id)}
+                      className="text-[10px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                    >
                       <i className="fas fa-plus-circle"></i> Create Bet
                     </button>
                   </div>
@@ -143,7 +147,7 @@ const Dashboard: React.FC<DashboardProps> = ({ bets, outcomes, sessions, current
               <button className="text-blue-600 text-sm font-medium hover:underline">View All</button>
             </div>
             <div className="p-6 space-y-4">
-              {THEMES.map((theme) => {
+              {themes.map((theme) => {
                 const themeOutcomes = outcomes.filter(o => o.theme_id === theme.id);
                 const status = themeOutcomes.some(o => o.status === 'Red') ? 'Red' : themeOutcomes.some(o => o.status === 'Yellow') ? 'Yellow' : 'Green';
                 return (

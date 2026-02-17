@@ -1,18 +1,20 @@
 
 import React, { useState } from 'react';
-import { Bet, User, BetType, BetTimebox, TshirtSize } from '../types';
-import { THEMES, TIMEBOXES } from '../constants';
+import { Bet, User, BetType, BetTimebox, TshirtSize, Theme } from '../types';
+import { TIMEBOXES } from '../constants';
 
 interface BetCreateProps {
   onClose: () => void;
   onCreate: (bet: Bet) => void;
   currentUser: User;
+  themes: Theme[];
+  initialThemeId?: string;
 }
 
-const BetCreate: React.FC<BetCreateProps> = ({ onClose, onCreate, currentUser }) => {
+const BetCreate: React.FC<BetCreateProps> = ({ onClose, onCreate, currentUser, themes, initialThemeId }) => {
   const [formData, setFormData] = useState({
     title: '',
-    theme_id: THEMES[0].id,
+    theme_id: initialThemeId || (themes.length > 0 ? themes[0].id : ''),
     bet_type: 'Delivery' as BetType,
     problem_statement: '',
     hypothesis: '',
@@ -22,7 +24,7 @@ const BetCreate: React.FC<BetCreateProps> = ({ onClose, onCreate, currentUser })
     completion_date: '',
   });
 
-  const selectedTheme = THEMES.find(t => t.id === formData.theme_id);
+  const selectedTheme = themes.find(t => t.id === formData.theme_id);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,7 +58,7 @@ const BetCreate: React.FC<BetCreateProps> = ({ onClose, onCreate, currentUser })
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
       <div className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-        <header className={`px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-${selectedTheme?.color}-50/50`}>
+        <header className={`px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-${selectedTheme?.color || 'slate'}-50/50`}>
           <div>
             <h2 className="text-xl font-bold text-slate-900 uppercase tracking-tight">New Strategic Bet</h2>
             <p className="text-sm text-slate-500 font-light mt-0.5">Define your hypothesis-driven strategic investment.</p>
@@ -88,7 +90,7 @@ const BetCreate: React.FC<BetCreateProps> = ({ onClose, onCreate, currentUser })
                 value={formData.theme_id}
                 onChange={e => setFormData({...formData, theme_id: e.target.value})}
               >
-                {THEMES.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                {themes.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
               </select>
             </div>
 

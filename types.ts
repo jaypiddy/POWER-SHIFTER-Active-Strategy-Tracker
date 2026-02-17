@@ -9,6 +9,11 @@ export type UserRole = 'Admin' | 'Editor' | 'Viewer';
 export type OwnershipType = 'Owner' | 'Supporting';
 export type ActionProgress = 0 | 25 | 50 | 75 | 100;
 
+export interface StrategicValue {
+  title: string;
+  description: string;
+}
+
 export interface PillarInvolvement {
   themeId: string;
   type: OwnershipType;
@@ -36,7 +41,14 @@ export interface Theme {
   workspace_id: string;
   name: string;
   description: string;
+  definition?: string;
+  successCriteria?: string;
   order: number;
+  /**
+   * The color associated with the strategic theme/pillar.
+   * Used for UI consistency across the dashboard, canvas, and outcomes.
+   */
+  color: string;
 }
 
 export interface Canvas {
@@ -44,7 +56,7 @@ export interface Canvas {
   workspace_id: string;
   purpose: string;
   vision: string;
-  values: string;
+  values: StrategicValue[];
   updated_at: string;
   updated_by: string;
   version_current_id: string;
@@ -56,7 +68,7 @@ export interface CanvasSnapshot {
   created_by: string;
   purpose: string;
   vision: string;
-  values: string;
+  values: StrategicValue[];
   outcomes: {
     title: string;
     status: Status;
@@ -93,6 +105,7 @@ export interface Measure {
 
 export interface BetAction {
   id: string;
+  bet_id: string; // Linking task to a specific bet
   title: string;
   description?: string;
   owner_id?: string;
@@ -121,7 +134,7 @@ export interface Bet {
   estimated_completion: string;
   tshirt_size: TshirtSize;
   progress: number;
-  actions: BetAction[];
+  actions: BetAction[]; // We keep this for UI convenience but it will be populated from the tasks collection
   owner_user_ids: string[];
   stakeholder_user_ids: string[];
   created_at: string;

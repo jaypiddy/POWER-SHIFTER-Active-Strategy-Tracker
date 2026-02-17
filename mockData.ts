@@ -43,7 +43,11 @@ export const INITIAL_CANVAS: Canvas = {
   workspace_id: 'w1',
   purpose: 'To empower organizations to navigate complexity with clarity and decisive action.',
   vision: 'The world\'s most adaptive strategy operating system.',
-  values: 'Curiosity over Certainty, Evidence over Opinion, Velocity over Perfection.',
+  values: [
+    { title: 'Curiosity over Certainty', description: 'We ask "Why?" and "What if?" before reaching for "How".' },
+    { title: 'Evidence over Opinion', description: 'Data beats anecdotes. We test our assumptions with real-world signals.' },
+    { title: 'Velocity over Perfection', description: 'Shipping and learning is better than waiting for the perfect solution.' }
+  ],
   updated_at: new Date().toISOString(),
   updated_by: 'u1',
   version_current_id: 'v1',
@@ -119,9 +123,12 @@ export const INITIAL_BETS: Bet[] = [
     tshirt_size: 'L',
     progress: 75,
     actions: [
-      { id: 'a1', title: 'Finalize API specs for Gemini integration', tshirt_size: 'S', progress: 100, start_date: '2024-01-20', due_date: '2024-02-15' },
-      { id: 'a2', title: 'Deploy alpha version to testing environment', tshirt_size: 'M', progress: 75, start_date: '2024-03-01', due_date: '2024-05-20' },
-      { id: 'a3', title: 'User feedback session (Internal Group)', tshirt_size: 'M', progress: 50, start_date: '2024-05-10', due_date: '2024-06-05' }
+      // Fix: Added missing bet_id for task association
+      { id: 'a1', bet_id: 'b1', title: 'Finalize API specs for Gemini integration', tshirt_size: 'S', progress: 100, start_date: '2024-01-20', due_date: '2024-02-15' },
+      // Fix: Added missing bet_id for task association
+      { id: 'a2', bet_id: 'b1', title: 'Deploy alpha version to testing environment', tshirt_size: 'M', progress: 75, start_date: '2024-03-01', due_date: '2024-05-20' },
+      // Fix: Added missing bet_id for task association
+      { id: 'a3', bet_id: 'b1', title: 'User feedback session (Internal Group)', tshirt_size: 'M', progress: 50, start_date: '2024-05-10', due_date: '2024-06-05' }
     ],
     owner_user_ids: ['u1'],
     stakeholder_user_ids: ['u2'],
@@ -147,8 +154,10 @@ export const INITIAL_BETS: Bet[] = [
     tshirt_size: 'XL',
     progress: 0,
     actions: [
-      { id: 'a4', title: 'Audit legacy CSV structures', tshirt_size: 'L', progress: 0, start_date: '2024-02-10', due_date: '2024-03-15' },
-      { id: 'a5', title: 'Draft unified schema documentation', tshirt_size: 'M', progress: 0, start_date: '2024-03-20', due_date: '2024-04-30' }
+      // Fix: Added missing bet_id for task association
+      { id: 'a4', bet_id: 'b2', title: 'Audit legacy CSV structures', tshirt_size: 'L', progress: 0, start_date: '2024-02-10', due_date: '2024-03-15' },
+      // Fix: Added missing bet_id for task association
+      { id: 'a5', bet_id: 'b2', title: 'Draft unified schema documentation', tshirt_size: 'M', progress: 0, start_date: '2024-03-20', due_date: '2024-04-30' }
     ],
     owner_user_ids: ['u2'],
     stakeholder_user_ids: ['u1'],

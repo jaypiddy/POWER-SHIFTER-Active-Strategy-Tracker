@@ -24,8 +24,8 @@ const STANDARD_TITLES = Object.keys(TITLES_MAPPING);
 
 const Rhythms: React.FC<RhythmsProps> = ({ sessions, bets, currentUser, onAddSession, onUpdateSession, users, comments }) => {
   const [activeSession, setActiveSession] = useState<RhythmSession | null>(null);
-  const [brief, setBrief] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [modalMode, setModalMode] = useState<'create' | 'edit' | null>(null);
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
   const [copyFeedback, setCopyFeedback] = useState(false);
@@ -42,12 +42,21 @@ const Rhythms: React.FC<RhythmsProps> = ({ sessions, bets, currentUser, onAddSes
   const [formMiro, setFormMiro] = useState('');
   const [isScrapingMiro, setIsScrapingMiro] = useState(false);
 
+  // Live editing buffer
+  const [liveNotes, setLiveNotes] = useState('');
+
   // Recording state
   const [isProcessingRecording, setIsProcessingRecording] = useState(false);
-  const [recordingSummary, setRecordingSummary] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const canEdit = currentUser.role === 'Admin' || currentUser.role === 'Editor';
+
+  // Sync liveNotes buffer when activeSession changes
+  useEffect(() => {
+    if (activeSession) {
+      setLiveNotes(activeSession.notes || '');
+    }
+  }, [activeSession?.id]);
 
   // Handle Miro URL paste/change for automatic scraping
   useEffect(() => {
@@ -58,7 +67,6 @@ const Rhythms: React.FC<RhythmsProps> = ({ sessions, bets, currentUser, onAddSes
         if (detectedName) {
           setIsCustomTitle(true);
           setFormName(detectedName);
-          // For Miro scrapes, we default to Monthly unless title hints otherwise
           setFormCadence('Monthly');
         }
         setIsScrapingMiro(false);
@@ -93,12 +101,27 @@ const Rhythms: React.FC<RhythmsProps> = ({ sessions, bets, currentUser, onAddSes
     setIsGenerating(true);
     try {
       const gBrief = await generateMeetingBrief(bets, comments, users);
-      setBrief(gBrief);
+      const updatedSession = { ...session, auto_brief: gBrief };
+      await onUpdateSession(updatedSession);
+      setActiveSession(updatedSession);
     } catch (e) {
       console.error(e);
-      setBrief("Failed to generate brief. Please review manual dashboards.");
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const handleSaveLiveNotes = async () => {
+    if (!activeSession) return;
+    setIsSaving(true);
+    try {
+      const updated = { ...activeSession, notes: liveNotes };
+      await onUpdateSession(updated);
+      setActiveSession(updated);
+    } catch (e) {
+      alert("Error saving notes.");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -150,24 +173,25 @@ const Rhythms: React.FC<RhythmsProps> = ({ sessions, bets, currentUser, onAddSes
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file || !activeSession) return;
 
     setIsProcessingRecording(true);
-    setRecordingSummary(null);
 
     try {
       const reader = new FileReader();
       reader.onload = async () => {
         const base64Data = (reader.result as string).split(',')[1];
         const summary = await summarizeMeetingRecording(base64Data, file.type, bets);
-        setRecordingSummary(summary || "Analysis failed to return content.");
+        const updated = { ...activeSession, recording_uri: summary || "Analysis failed." };
+        await onUpdateSession(updated);
+        setActiveSession(updated);
         setIsProcessingRecording(false);
       };
       reader.readAsDataURL(file);
     } catch (err) {
       console.error(err);
       setIsProcessingRecording(false);
-      alert("Error processing recording. Check console for details.");
+      alert("Error processing recording.");
     }
   };
 
@@ -207,8 +231,8 @@ const Rhythms: React.FC<RhythmsProps> = ({ sessions, bets, currentUser, onAddSes
             </div>
             <h1 className="text-3xl font-bold">{activeSession.name}</h1>
           </div>
-          <button onClick={() => { setActiveSession(null); setBrief(null); setRecordingSummary(null); }} className="px-6 py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl border border-slate-700 transition-colors">
-            End Session
+          <button onClick={() => { setActiveSession(null); setLiveNotes(''); }} className="px-6 py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl border border-slate-700 transition-colors">
+            Exit Session
           </button>
         </header>
 
@@ -218,10 +242,10 @@ const Rhythms: React.FC<RhythmsProps> = ({ sessions, bets, currentUser, onAddSes
                  <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
                     <h3 className="font-bold text-slate-800 flex items-center gap-2">
                        <i className="fas fa-wand-magic-sparkles text-blue-500"></i>
-                       AI Generated Strategic Brief
+                       Strategic Context (AI Brief)
                     </h3>
-                    {brief && (
-                      <button onClick={() => copyToClipboard(brief)} className="text-xs font-bold text-slate-500 hover:text-blue-600 px-3 py-1.5 rounded-lg transition-all">
+                    {activeSession.auto_brief && (
+                      <button onClick={() => copyToClipboard(activeSession.auto_brief!)} className="text-xs font-bold text-slate-500 hover:text-blue-600 px-3 py-1.5 rounded-lg transition-all">
                         <i className={`fas ${copyFeedback ? 'fa-check text-emerald-500' : 'fa-copy'} mr-2`}></i>
                         Copy Brief
                       </button>
@@ -235,7 +259,7 @@ const Rhythms: React.FC<RhythmsProps> = ({ sessions, bets, currentUser, onAddSes
                        </div>
                     ) : (
                        <div className="text-slate-700">
-                          {brief ? renderRichText(brief) : <p className="text-slate-400 italic">No briefing generated.</p>}
+                          {activeSession.auto_brief ? renderRichText(activeSession.auto_brief) : <p className="text-slate-400 italic">No briefing data found.</p>}
                        </div>
                     )}
                  </div>
@@ -245,13 +269,13 @@ const Rhythms: React.FC<RhythmsProps> = ({ sessions, bets, currentUser, onAddSes
                  <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                     <h3 className="font-bold text-slate-800 flex items-center gap-2">
                        <i className="fas fa-microphone-lines text-rose-500"></i>
-                       Recording Analysis
+                       Recording Synthesis
                     </h3>
                     <div className="flex items-center gap-3">
                       <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" accept="audio/*,video/*" />
                       <button onClick={() => fileInputRef.current?.click()} disabled={isProcessingRecording} className="text-xs font-bold bg-white text-slate-700 border border-slate-200 px-4 py-2 rounded-xl hover:bg-slate-50 transition-colors flex items-center gap-2">
                         <i className="fas fa-upload"></i>
-                        {isProcessingRecording ? 'Processing...' : 'Upload Recording'}
+                        {isProcessingRecording ? 'Analyzing...' : 'Analyze Recording'}
                       </button>
                     </div>
                  </div>
@@ -259,30 +283,54 @@ const Rhythms: React.FC<RhythmsProps> = ({ sessions, bets, currentUser, onAddSes
                     {isProcessingRecording ? (
                       <div className="flex flex-col items-center justify-center py-10 space-y-4">
                         <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                        <p className="text-sm font-bold text-slate-500 uppercase">Analyzing with Gemini...</p>
+                        <p className="text-sm font-bold text-slate-500 uppercase">Generating Strategic Summary...</p>
                       </div>
-                    ) : recordingSummary ? (
-                      renderRichText(recordingSummary)
+                    ) : activeSession.recording_uri ? (
+                      renderRichText(activeSession.recording_uri)
                     ) : (
-                      <p className="text-slate-400 text-sm italic text-center py-4">No recording analyzed for this session.</p>
+                      <p className="text-slate-400 text-sm italic text-center py-4">Upload a meeting file to store a permanent strategic summary.</p>
                     )}
                  </div>
               </div>
 
-              <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
-                 <h3 className="font-bold text-slate-800 mb-4">Live Session Notes</h3>
-                 <textarea placeholder="Capture insights here..." className="w-full h-40 bg-slate-50 border border-slate-200 rounded-xl p-4 text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none" />
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                 <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                    <h3 className="font-bold text-slate-800">Live Session Notes</h3>
+                    <button 
+                      onClick={handleSaveLiveNotes} 
+                      disabled={isSaving}
+                      className="px-4 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-lg hover:bg-blue-700 transition-all flex items-center gap-2 disabled:opacity-50"
+                    >
+                       {isSaving ? <i className="fas fa-circle-notch animate-spin"></i> : <i className="fas fa-save"></i>}
+                       Save Session Insights
+                    </button>
+                 </div>
+                 <div className="p-0">
+                    <textarea 
+                      value={liveNotes}
+                      onChange={(e) => setLiveNotes(e.target.value)}
+                      placeholder="Capture decisions, actions, and strategic learnings here..." 
+                      className="w-full h-64 bg-white border-none p-8 text-slate-700 focus:ring-0 outline-none leading-relaxed font-light resize-none" 
+                    />
+                 </div>
               </div>
            </div>
 
            <div className="space-y-6">
               <div className="bg-slate-50 rounded-2xl border border-slate-200 p-6">
-                 <h3 className="font-bold text-slate-800 mb-4">Agenda</h3>
-                 <ul className="space-y-3">
-                    {['Portfolio Review (10m)', 'Blocked Bets Deep Dive (20m)', 'Action Planning (15m)'].map((item, i) => (
-                      <li key={i} className="flex gap-3 items-center text-sm text-slate-600 font-semibold">
-                         <span className="w-5 h-5 bg-white border border-slate-200 rounded-full flex items-center justify-center text-[10px] font-bold">{i+1}</span>
-                         {item}
+                 <h3 className="font-bold text-slate-800 mb-4 uppercase text-[10px] tracking-widest text-slate-400">Standard Agenda</h3>
+                 <ul className="space-y-4">
+                    {[
+                      { t: 'Portfolio Alignment', d: 'Review health of current bets' },
+                      { t: 'Blocker Deconstruction', d: 'Deep dive into red/yellow items' },
+                      { t: 'Hypothesis Adjustment', d: 'Pivot or persevere based on evidence' }
+                    ].map((item, i) => (
+                      <li key={i} className="flex gap-4">
+                         <span className="w-6 h-6 bg-white border border-slate-200 rounded-full flex items-center justify-center text-[10px] font-bold text-slate-400 shrink-0">{i+1}</span>
+                         <div>
+                            <p className="text-sm font-bold text-slate-800 leading-tight">{item.t}</p>
+                            <p className="text-[11px] text-slate-500 font-light mt-0.5">{item.d}</p>
+                         </div>
                       </li>
                     ))}
                  </ul>
@@ -290,8 +338,8 @@ const Rhythms: React.FC<RhythmsProps> = ({ sessions, bets, currentUser, onAddSes
               {activeSession.miro_link && (
                 <div className="bg-slate-900 rounded-2xl p-6 text-white overflow-hidden relative group">
                    <div className="absolute top-0 right-0 -m-4 opacity-10 group-hover:scale-125 transition-transform"><i className="fas fa-object-group text-8xl"></i></div>
-                   <h3 className="font-bold mb-2 relative">Workspace</h3>
-                   <a href={activeSession.miro_link} target="_blank" rel="noopener noreferrer" className="relative block w-full bg-slate-800 text-white text-center font-bold py-3 rounded-xl hover:bg-slate-700 border border-slate-700">Open Miro</a>
+                   <h3 className="font-bold mb-2 relative">Project Board</h3>
+                   <a href={activeSession.miro_link} target="_blank" rel="noopener noreferrer" className="relative block w-full bg-slate-800 text-white text-center font-bold py-3 rounded-xl hover:bg-slate-700 border border-slate-700 transition-colors">Launch Miro Board</a>
                 </div>
               )}
            </div>
@@ -305,20 +353,20 @@ const Rhythms: React.FC<RhythmsProps> = ({ sessions, bets, currentUser, onAddSes
       <header className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
         <div>
           <h1 className="text-3xl font-bold text-slate-900">Strategic Rhythms</h1>
-          <p className="text-slate-500 mt-1">The heartbeat of Active Strategy execution.</p>
+          <p className="text-slate-500 mt-1">Operationalize strategy through scheduled checkpoints.</p>
           
           <div className="flex mt-6 bg-white border border-slate-200 p-1 rounded-xl w-fit shadow-sm">
              <button 
                onClick={() => setRhythmTab('active')}
                className={`px-5 py-2 text-xs font-bold rounded-lg transition-all ${rhythmTab === 'active' ? 'bg-slate-900 text-white' : 'text-slate-400 hover:text-slate-600'}`}
              >
-               Active Sessions
+               Active Cycles
              </button>
              <button 
                onClick={() => setRhythmTab('archived')}
                className={`px-5 py-2 text-xs font-bold rounded-lg transition-all ${rhythmTab === 'archived' ? 'bg-slate-900 text-white' : 'text-slate-400 hover:text-slate-600'}`}
              >
-               Archived Sessions
+               Archive
              </button>
           </div>
         </div>
@@ -328,14 +376,12 @@ const Rhythms: React.FC<RhythmsProps> = ({ sessions, bets, currentUser, onAddSes
              <button 
                onClick={() => setViewMode('card')}
                className={`p-2 rounded-lg transition-all ${viewMode === 'card' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-400'}`}
-               title="Card View"
              >
                <i className="fas fa-th-large"></i>
              </button>
              <button 
                onClick={() => setViewMode('list')}
                className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-400'}`}
-               title="List View"
              >
                <i className="fas fa-list"></i>
              </button>
@@ -347,7 +393,7 @@ const Rhythms: React.FC<RhythmsProps> = ({ sessions, bets, currentUser, onAddSes
               className="px-6 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 shadow-lg shadow-blue-900/10 transition-all flex items-center gap-2"
             >
               <i className="fas fa-plus text-xs"></i>
-              New Rhythm Template
+              Add Rhythm
             </button>
           )}
         </div>
@@ -383,16 +429,11 @@ const Rhythms: React.FC<RhythmsProps> = ({ sessions, bets, currentUser, onAddSes
                       <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded ${ session.cadence === 'Weekly' ? 'bg-blue-50 text-blue-600' : session.cadence === 'Monthly' ? 'bg-amber-50 text-amber-600' : session.cadence === 'Yearly' ? 'bg-indigo-50 text-indigo-600' : 'bg-rose-50 text-rose-600' }`}>
                         {session.cadence}
                       </span>
-                      {session.miro_link && (
-                        <span className="flex items-center gap-1 text-[9px] font-bold text-amber-500 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-100">
-                          <i className="fas fa-object-group"></i> MIRO
-                        </span>
-                      )}
                     </div>
                  </div>
                  <h3 className="text-xl font-bold text-slate-900 mb-1">{session.name}</h3>
                  <p className="text-sm text-slate-500 mb-6 font-light">
-                   {rhythmTab === 'active' ? `Next: ${new Date(session.scheduled_at).toLocaleDateString()}` : `Archived on: ${new Date(session.archived_at!).toLocaleDateString()}`}
+                   {rhythmTab === 'active' ? `Targeted: ${new Date(session.scheduled_at).toLocaleDateString()}` : `Closed: ${new Date(session.archived_at!).toLocaleDateString()}`}
                  </p>
                  {rhythmTab === 'active' && (
                     <button onClick={() => startMeeting(session)} className="w-full py-3 font-bold rounded-xl transition-colors flex items-center justify-center gap-2 bg-slate-900 text-white hover:bg-slate-800">
@@ -409,9 +450,9 @@ const Rhythms: React.FC<RhythmsProps> = ({ sessions, bets, currentUser, onAddSes
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200">
-                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">Rhythm Name</th>
-                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">Cadence</th>
-                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">Scheduled Date</th>
+                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">Rhythm Cycle</th>
+                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">Frequency</th>
+                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">Date</th>
                 <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">Status</th>
                 <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400 text-right">Actions</th>
               </tr>
@@ -446,16 +487,6 @@ const Rhythms: React.FC<RhythmsProps> = ({ sessions, bets, currentUser, onAddSes
                            <i className="fas fa-pen"></i>
                          </button>
                        )}
-                       {canEdit && rhythmTab === 'active' && (
-                         <button onClick={() => handleArchiveSession(session)} className="p-2 text-slate-400 hover:text-rose-600 rounded-lg transition-colors" title="Archive">
-                           <i className="fas fa-box-archive"></i>
-                         </button>
-                       )}
-                       {canEdit && rhythmTab === 'archived' && (
-                         <button onClick={() => handleUnarchiveSession(session)} className="p-2 text-slate-400 hover:text-emerald-600 rounded-lg transition-colors" title="Unarchive">
-                           <i className="fas fa-rotate-left"></i>
-                         </button>
-                       )}
                     </div>
                   </td>
                 </tr>
@@ -468,7 +499,7 @@ const Rhythms: React.FC<RhythmsProps> = ({ sessions, bets, currentUser, onAddSes
       {filteredSessions.length === 0 && (
         <div className="p-20 text-center bg-white rounded-2xl border-2 border-dashed border-slate-200">
           <i className="fas fa-calendar-alt text-slate-200 text-5xl mb-4"></i>
-          <p className="text-slate-500 font-medium">No {rhythmTab} sessions found.</p>
+          <p className="text-slate-500 font-medium">No sessions scheduled.</p>
         </div>
       )}
 
@@ -539,11 +570,10 @@ const Rhythms: React.FC<RhythmsProps> = ({ sessions, bets, currentUser, onAddSes
                   <i className="fas fa-object-group absolute left-3 top-1/2 -translate-y-1/2 text-amber-500/50"></i>
                   <input type="url" placeholder="https://miro.com/app/board/..." className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" value={formMiro} onChange={(e) => setFormMiro(e.target.value)} />
                 </div>
-                <p className="text-[10px] text-slate-400 mt-2 font-light italic">Pasting a Miro link will automatically attempt to fetch the board's name and set monthly cadence.</p>
               </div>
               <div className="pt-4 flex gap-3">
-                <button type="button" onClick={() => setModalMode(null)} className="flex-1 py-2.5 border border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-50">Cancel</button>
-                <button type="submit" className="flex-1 py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 shadow-lg shadow-blue-900/20">{modalMode === 'create' ? 'Create Template' : 'Save Changes'}</button>
+                <button type="button" onClick={() => setModalMode(null)} className="flex-1 py-2.5 border border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-50 transition-colors">Cancel</button>
+                <button type="submit" className="flex-1 py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 shadow-lg shadow-blue-900/20 active:scale-95 transition-all">Save Template</button>
               </div>
             </form>
           </div>

@@ -11,8 +11,6 @@ import {
   signOut
 } from 'firebase/auth';
 import { auth } from '../services/firebase';
-import { saveUser, getUserById } from '../services/firestoreService';
-import { User, UserRole } from '../types';
 
 const Auth: React.FC = () => {
   const [isRegistering, setIsRegistering] = useState(false);
@@ -53,25 +51,9 @@ const Auth: React.FC = () => {
     const provider = new GoogleAuthProvider();
     
     try {
-      const result = await signInWithPopup(auth, provider);
-      const fbUser = result.user;
-      
-      const existingUser = await getUserById(fbUser.uid);
-      
-      if (!existingUser) {
-        const names = fbUser.displayName?.split(' ') || ['Unknown', 'User'];
-        const newUser: User = {
-          id: fbUser.uid,
-          firstName: names[0],
-          lastName: names.slice(1).join(' ') || 'User',
-          email: fbUser.email || '',
-          role: 'Editor' as UserRole,
-          title: 'Strategic Partner',
-          active: true,
-          avatar: fbUser.photoURL || undefined
-        };
-        await saveUser(newUser);
-      }
+      // We only handle the Authentication part here. 
+      // App.tsx handles the Firestore user sync in the onAuthStateChanged listener.
+      await signInWithPopup(auth, provider);
     } catch (err: any) {
       console.error("Google Auth Error:", err);
       if (err.code === 'auth/unauthorized-domain') {
@@ -115,18 +97,8 @@ const Auth: React.FC = () => {
           photoURL: finalAvatar
         });
 
-        const newUser: User = {
-          id: fbUser.uid,
-          firstName,
-          lastName,
-          email,
-          role: 'Editor' as UserRole,
-          title,
-          active: true,
-          avatar: finalAvatar
-        };
-
-        await saveUser(newUser);
+        // We only handle the Authentication and Profile update part here.
+        // App.tsx handles the rest of the user sync.
         await sendEmailVerification(fbUser);
         setVerificationEmail(email);
         await signOut(auth);

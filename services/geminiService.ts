@@ -2,7 +2,8 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { Bet, Comment, User, Outcome1Y } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
+// Always use named parameter for apiKey and use process.env.API_KEY directly
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export async function tightenHypothesis(problem: string, hypothesis: string) {
   const response = await ai.models.generateContent({
@@ -76,6 +77,7 @@ export async function generateStrategyReport(outcomes: Outcome1Y[], bets: Bet[])
 
 /**
  * Starts a Strategic Council session with a specific persona and context.
+ * Uses gemini-3-pro-preview for complex reasoning tasks.
  */
 export function startStrategicCouncil(bet: Bet) {
   const systemInstruction = `You are the Strategic Council, a world-class Active Strategy Coach. 
@@ -105,7 +107,7 @@ export function startStrategicCouncil(bet: Bet) {
   When the user says hello or starts the chat, provide a punchy 2-sentence initial assessment of their bet, identifying the weakest link in their logic immediately.`;
 
   const chat = ai.chats.create({
-    model: 'gemini-3-flash-preview',
+    model: 'gemini-3-pro-preview',
     config: {
       systemInstruction,
       temperature: 0.8,
@@ -179,6 +181,7 @@ export async function summarizeMeetingRecording(base64Data: string, mimeType: st
       ]
     },
     config: {
+      // Small thinking budget used for better summarization quality.
       thinkingConfig: { thinkingBudget: 2000 }
     }
   });

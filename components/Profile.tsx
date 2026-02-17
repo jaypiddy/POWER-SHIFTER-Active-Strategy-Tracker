@@ -1,17 +1,17 @@
 
 import React, { useState, useRef } from 'react';
-import { User, OwnershipType, PillarInvolvement } from '../types';
-import { THEMES } from '../constants';
+import { User, OwnershipType, PillarInvolvement, Theme } from '../types';
 import { deleteUser, updateProfile } from 'firebase/auth';
 import { auth } from '../services/firebase';
 import { deleteUserRecord } from '../services/firestoreService';
 
 interface ProfileProps {
   currentUser: User;
+  themes: Theme[];
   onUpdateUser: (updatedUser: User) => void;
 }
 
-const Profile: React.FC<ProfileProps> = ({ currentUser, onUpdateUser }) => {
+const Profile: React.FC<ProfileProps> = ({ currentUser, themes, onUpdateUser }) => {
   const [formData, setFormData] = useState<User>({ ...currentUser, supportingPillars: currentUser.supportingPillars || [] });
   const [isSaving, setIsSaving] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -167,7 +167,7 @@ const Profile: React.FC<ProfileProps> = ({ currentUser, onUpdateUser }) => {
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-bold text-slate-700"
                 >
                   <option value="">Global / Unassigned</option>
-                  {THEMES.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                  {themes.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                 </select>
               </div>
               <div className="space-y-1.5">
@@ -208,7 +208,7 @@ const Profile: React.FC<ProfileProps> = ({ currentUser, onUpdateUser }) => {
                         className="w-full bg-white border border-slate-200 rounded-lg px-4 py-2.5 text-xs font-bold focus:ring-2 focus:ring-blue-500 outline-none"
                       >
                         <option value="">Select Pillar...</option>
-                        {THEMES.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                        {themes.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                       </select>
                     </div>
                     <div className="flex-1 space-y-1.5">

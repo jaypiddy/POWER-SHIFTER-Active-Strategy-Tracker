@@ -1,16 +1,16 @@
 
 import React, { useState } from 'react';
-import { User, UserRole, OwnershipType } from '../types';
-import { THEMES } from '../constants';
+import { User, UserRole, OwnershipType, Theme } from '../types';
 
 interface UserManagementProps {
   users: User[];
   currentUser: User;
+  themes: Theme[];
   onAddUser: (user: User) => void;
   onUpdateUser: (user: User) => void;
 }
 
-const UserManagement: React.FC<UserManagementProps> = ({ users, currentUser, onAddUser, onUpdateUser }) => {
+const UserManagement: React.FC<UserManagementProps> = ({ users, currentUser, themes, onAddUser, onUpdateUser }) => {
   const [modalMode, setModalMode] = useState<'create' | 'edit' | null>(null);
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
@@ -101,7 +101,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, currentUser, onA
 
       {/* Strategy Ownership Matrix */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {THEMES.map(theme => {
+        {themes.map(theme => {
           const owner = users.find(u => u.ownedThemeId === theme.id && u.ownershipType === 'Owner');
           
           // A supporting user is someone whose primary ownedTheme is this one OR who has it in supportingPillars
@@ -168,7 +168,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, currentUser, onA
           </thead>
           <tbody className="divide-y divide-slate-100">
             {users.length > 0 ? users.map(user => {
-              const theme = THEMES.find(t => t.id === user.ownedThemeId);
+              const theme = themes.find(t => t.id === user.ownedThemeId);
               const supportCount = user.supportingPillars?.length || 0;
               
               return (
@@ -221,7 +221,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, currentUser, onA
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <span className="text-[9px] font-bold text-slate-400 uppercase">Supporting:</span>
                           {user.supportingPillars?.map(p => {
-                            const pTheme = THEMES.find(t => t.id === p.themeId);
+                            const pTheme = themes.find(t => t.id === p.themeId);
                             return pTheme ? (
                               <span key={p.themeId} className={`px-1.5 py-0.5 rounded text-[8px] font-bold uppercase bg-slate-50 text-slate-500 border border-slate-100`}>
                                 {pTheme.name}
@@ -319,7 +319,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, currentUser, onA
                     <select className="w-full bg-white border border-slate-200 rounded-lg px-4 py-2 text-xs focus:ring-2 focus:ring-blue-500 outline-none"
                       value={formData.ownedThemeId} onChange={e => setFormData({...formData, ownedThemeId: e.target.value})}>
                       <option value="">None (Global Support)</option>
-                      {THEMES.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                      {themes.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                     </select>
                   </div>
                   <div>
