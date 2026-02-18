@@ -1,8 +1,8 @@
 
 import React, { useState, useRef } from 'react';
-import { 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
+import {
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
   updateProfile,
   GoogleAuthProvider,
   signInWithPopup,
@@ -22,7 +22,7 @@ const Auth: React.FC = () => {
   const [unauthorizedDomain, setUnauthorizedDomain] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  
+
   // Form State
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -30,7 +30,7 @@ const Auth: React.FC = () => {
   const [lastName, setLastName] = useState('');
   const [title, setTitle] = useState('');
   const [avatar, setAvatar] = useState<string>('');
-  
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -44,24 +44,34 @@ const Auth: React.FC = () => {
     }
   };
 
+
   const handleGoogleSignIn = async () => {
     setError(null);
     setUnauthorizedDomain(null);
     setGoogleLoading(true);
     const provider = new GoogleAuthProvider();
-    
+
     try {
-      // We only handle the Authentication part here. 
-      // App.tsx handles the Firestore user sync in the onAuthStateChanged listener.
+      // Try popup first
       await signInWithPopup(auth, provider);
     } catch (err: any) {
-      console.error("Google Auth Error:", err);
+      console.warn("Popup Auth Failed, trying Redirect:", err);
+      if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request' || err.code === 'auth/operation-not-allowed' || err.message.includes('COOP')) {
+        try {
+          const { signInWithRedirect } = await import('firebase/auth');
+          await signInWithRedirect(auth, provider);
+          return; // Redirecting...
+        } catch (redirectErr: any) {
+          console.error("Redirect Auth also failed:", redirectErr);
+          setError(redirectErr.message || "Failed to sign in with Google (Redirect)");
+        }
+      }
+
       if (err.code === 'auth/unauthorized-domain') {
         setUnauthorizedDomain(window.location.hostname);
       } else {
         setError(err.message || "Failed to sign in with Google");
       }
-    } finally {
       setGoogleLoading(false);
     }
   };
@@ -106,7 +116,7 @@ const Auth: React.FC = () => {
       } else {
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
         const fbUser = userCredential.user;
-        
+
         if (!fbUser.emailVerified) {
           setVerificationEmail(fbUser.email || '');
           await signOut(auth);
@@ -126,8 +136,8 @@ const Auth: React.FC = () => {
   };
 
   // Shared wrapper for verification and reset success screens
-  const AuthNoticeScreen = ({ icon, title, message, emailText, buttonLabel, onAction }: { 
-    icon: string, title: string, message: string, emailText: string, buttonLabel: string, onAction: () => void 
+  const AuthNoticeScreen = ({ icon, title, message, emailText, buttonLabel, onAction }: {
+    icon: string, title: string, message: string, emailText: string, buttonLabel: string, onAction: () => void
   }) => (
     <div className="min-h-screen flex items-center justify-center bg-slate-900 p-6 relative overflow-hidden">
       <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
@@ -150,7 +160,7 @@ const Auth: React.FC = () => {
             </div>
           </div>
           <div className="pt-4 space-y-3">
-            <button 
+            <button
               onClick={onAction}
               className="w-full py-4 bg-slate-900 text-white font-bold rounded-2xl hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/10 active:scale-95"
             >
@@ -164,7 +174,7 @@ const Auth: React.FC = () => {
 
   if (needsVerification) {
     return (
-      <AuthNoticeScreen 
+      <AuthNoticeScreen
         icon="fa-envelope-open-text"
         title="Email Verification"
         message="We have sent you a verification email to"
@@ -182,7 +192,7 @@ const Auth: React.FC = () => {
 
   if (resetSent) {
     return (
-      <AuthNoticeScreen 
+      <AuthNoticeScreen
         icon="fa-key"
         title="Check Your Email"
         message="We sent you a password change link to"
@@ -228,14 +238,14 @@ const Auth: React.FC = () => {
                   <input required type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-11 pr-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-medium" />
                 </div>
               </div>
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 disabled={loading}
                 className="w-full py-4 bg-slate-900 text-white font-bold rounded-2xl hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/10 active:scale-95 disabled:opacity-50"
               >
                 {loading ? <i className="fas fa-circle-notch animate-spin"></i> : 'Get Reset Link'}
               </button>
-              <button 
+              <button
                 type="button"
                 onClick={() => { setIsForgotPassword(false); setError(null); }}
                 className="w-full text-center text-xs font-bold text-slate-400 hover:text-blue-600 transition-colors uppercase tracking-widest"
@@ -267,13 +277,13 @@ const Auth: React.FC = () => {
 
         <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
           <div className="flex border-b border-slate-100">
-            <button 
+            <button
               onClick={() => { setIsRegistering(false); setError(null); setUnauthorizedDomain(null); }}
               className={`flex-1 py-4 text-sm font-bold transition-colors ${!isRegistering ? 'text-blue-600 border-b-2 border-blue-600' : 'text-slate-400 hover:text-slate-600'}`}
             >
               Sign In
             </button>
-            <button 
+            <button
               onClick={() => { setIsRegistering(true); setError(null); setUnauthorizedDomain(null); }}
               className={`flex-1 py-4 text-sm font-bold transition-colors ${isRegistering ? 'text-blue-600 border-b-2 border-blue-600' : 'text-slate-400 hover:text-slate-600'}`}
             >
@@ -308,20 +318,20 @@ const Auth: React.FC = () => {
               {isRegistering && (
                 <div className="space-y-4">
                   <div className="flex flex-col items-center mb-6">
-                     <div 
-                       onClick={() => fileInputRef.current?.click()}
-                       className="w-20 h-20 rounded-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center cursor-pointer overflow-hidden group hover:border-blue-400 transition-colors"
-                     >
-                       {avatar ? (
-                         <img src={avatar} alt="Preview" className="w-full h-full object-cover" />
-                       ) : (
-                         <div className="text-center">
-                           <i className="fas fa-camera text-slate-400 group-hover:text-blue-500 transition-colors"></i>
-                           <p className="text-[8px] font-bold text-slate-400 uppercase mt-1">Upload</p>
-                         </div>
-                       )}
-                     </div>
-                     <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
+                    <div
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-20 h-20 rounded-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center cursor-pointer overflow-hidden group hover:border-blue-400 transition-colors"
+                    >
+                      {avatar ? (
+                        <img src={avatar} alt="Preview" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="text-center">
+                          <i className="fas fa-camera text-slate-400 group-hover:text-blue-500 transition-colors"></i>
+                          <p className="text-[8px] font-bold text-slate-400 uppercase mt-1">Upload</p>
+                        </div>
+                      )}
+                    </div>
+                    <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
@@ -353,7 +363,7 @@ const Auth: React.FC = () => {
                   <div className="flex justify-between items-center ml-1">
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Password</label>
                     {!isRegistering && (
-                      <button 
+                      <button
                         type="button"
                         onClick={() => { setIsForgotPassword(true); setError(null); }}
                         className="text-[9px] font-bold text-blue-600 uppercase tracking-wider hover:underline"
@@ -369,8 +379,8 @@ const Auth: React.FC = () => {
                 </div>
               </div>
 
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 disabled={loading || googleLoading}
                 className="w-full py-4 bg-slate-900 text-white font-bold rounded-2xl hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/10 active:scale-95 disabled:opacity-50"
               >
@@ -387,7 +397,7 @@ const Auth: React.FC = () => {
               </div>
             </div>
 
-            <button 
+            <button
               type="button"
               onClick={handleGoogleSignIn}
               disabled={loading || googleLoading}

@@ -1,0 +1,27 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper function to check if user is signed in
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Users: Users can read/write their own profile
+    match /users/{userId} {
+      allow read, write: if isSignedIn() && request.auth.uid == userId;
+    }
+    
+    // Shared Collections: Allow all authenticated users to read/write for now
+    match /themes/{document=**} { allow read, write: if isSignedIn(); }
+    match /bets/{document=**} { allow read, write: if isSignedIn(); }
+    match /tasks/{document=**} { allow read, write: if isSignedIn(); }
+    match /outcomes/{document=**} { allow read, write: if isSignedIn(); }
+    match /measures/{document=**} { allow read, write: if isSignedIn(); }
+    match /comments/{document=**} { allow read, write: if isSignedIn(); }
+    match /sessions/{document=**} { allow read, write: if isSignedIn(); }
+    match /snapshots/{document=**} { allow read, write: if isSignedIn(); }
+    
+    // Canvas: Singleton document
+    match /canvas/{document=**} { allow read, write: if isSignedIn(); }
+  }
+}

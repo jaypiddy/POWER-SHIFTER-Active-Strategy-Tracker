@@ -3,13 +3,13 @@ import React, { useState, useEffect } from 'react';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { auth, db } from './services/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
-import { 
-  getUserById, 
-  saveUser, 
-  subscribeToCollection, 
-  saveBet, 
-  saveOutcome, 
-  saveMeasure, 
+import {
+  getUserById,
+  saveUser,
+  subscribeToCollection,
+  saveBet,
+  saveOutcome,
+  saveMeasure,
   deleteMeasure,
   saveComment,
   saveSession,
@@ -41,6 +41,7 @@ const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [permissionError, setPermissionError] = useState(false);
 
   // Live App State from Firestore
   const [users, setUsers] = useState<User[]>([]);
@@ -53,7 +54,7 @@ const App: React.FC = () => {
   const [sessions, setSessions] = useState<RhythmSession[]>([]);
   const [snapshots, setSnapshots] = useState<CanvasSnapshot[]>([]);
   const [canvas, setCanvas] = useState<CanvasType>(INITIAL_CANVAS);
-  
+
   const [selectedBet, setSelectedBet] = useState<Bet | null>(null);
   const [selectedOutcome, setSelectedOutcome] = useState<Outcome1Y | null>(null);
   const [isCreatingBet, setIsCreatingBet] = useState(false);
@@ -63,11 +64,10 @@ const App: React.FC = () => {
   // Auth Listener
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
+      setPermissionError(false);
       if (fbUser) {
         try {
           // ADD A SMALL DELAY to ensure the background Firestore Auth handshake completes.
-          // This is the most effective way to prevent "Missing or insufficient permissions"
-          // during the very first request of a new session.
           await new Promise(resolve => setTimeout(resolve, 500));
 
           const userData = await getUserById(fbUser.uid);
@@ -89,9 +89,8 @@ const App: React.FC = () => {
           }
         } catch (error) {
           console.error("Critical: Failed to sync user profile from Firestore:", error);
-          // If after several retries it still fails, we force a logout to let the user retry.
-          if (error instanceof Error && (error.message.includes('permissions') || error.message.includes('permission-denied'))) {
-            alert("Security handshake delayed. Please try refreshing the page.");
+          if (error instanceof Error && (error.message.includes('permissions') || error.message.includes('permission-denied') || (error as any).code === 'permission-denied')) {
+            setPermissionError(true);
           }
         }
       } else {
@@ -123,7 +122,7 @@ const App: React.FC = () => {
     const unsubComments = subscribeToCollection('comments', (data) => setComments(data as Comment[]), 'created_at');
     const unsubSessions = subscribeToCollection('sessions', (data) => setSessions(data as RhythmSession[]), 'scheduled_at');
     const unsubSnapshots = subscribeToCollection('snapshots', (data) => setSnapshots(data as CanvasSnapshot[]), 'created_at');
-    
+
     // Strategy Canvas Subscription (Document c1)
     const unsubCanvas = onSnapshot(doc(db, 'canvas', 'c1'), (snapshot) => {
       if (snapshot.exists()) {
@@ -252,8 +251,10 @@ const App: React.FC = () => {
 
   const handleUpdateBet = async (updatedBet: Bet) => {
     updatedBet.updated_at = new Date().toISOString();
+    // Optimistic update to prevent UI reversion
+    setBets(prev => prev.map(b => b.id === updatedBet.id ? updatedBet : b));
     await saveBet(updatedBet);
-    setSelectedBet(null);
+    // Keep modal open after update
   };
 
   const handleDeleteBet = async (betId: string) => {
@@ -297,8 +298,36 @@ const App: React.FC = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-900">
         <div className="flex flex-col items-center gap-4">
-           <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-           <p className="text-slate-400 font-bold text-xs uppercase tracking-widest">Warming Engine...</p>
+          <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-slate-400 font-bold text-xs uppercase tracking-widest">Warming Engine...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (permissionError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-900 text-white p-6">
+        <div className="max-w-lg bg-slate-800 p-8 rounded-xl border border-rose-500/30 shadow-2xl">
+          <h2 className="text-2xl font-bold text-rose-500 mb-4"><i className="fas fa-lock mr-2"></i> Database Access Denied</h2>
+          <p className="text-slate-300 mb-6">
+            Your user is authenticated, but Firestore denied access to your profile. This usually means the <strong>database rules</strong> haven't been applied in the Firebase Console yet.
+          </p>
+          <div className="bg-slate-950 p-4 rounded mb-6 text-sm font-mono text-slate-400 overflow-x-auto border border-slate-700">
+            <p className="mb-2 text-slate-500">// Copy this to Firebase Console &gt; Firestore &gt; Rules</p>
+            <pre>{`match /users/{userId} {
+  allow read, write: if request.auth != null && request.auth.uid == userId;
+}`}</pre>
+          </div>
+
+          <div className="flex gap-4">
+            <button onClick={() => window.location.reload()} className="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded font-bold transition-colors">
+              I've Updated Rules, Retry
+            </button>
+            <button onClick={handleLogout} className="px-4 py-2 border border-slate-600 hover:bg-slate-700 rounded font-bold transition-colors">
+              Log Out
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -314,10 +343,10 @@ const App: React.FC = () => {
         return <Dashboard bets={populatedBets} outcomes={outcomes} sessions={sessions} currentUser={currentUser} themes={themes} onNewBet={handleOpenNewBet} />;
       case 'canvas':
         return (
-          <Canvas 
-            canvas={canvas} 
-            bets={populatedBets} 
-            outcomes={outcomes} 
+          <Canvas
+            canvas={canvas}
+            bets={populatedBets}
+            outcomes={outcomes}
             currentUser={currentUser}
             comments={comments}
             snapshots={snapshots}
@@ -331,57 +360,57 @@ const App: React.FC = () => {
         );
       case 'portfolio':
         return (
-          <Portfolio 
-            bets={populatedBets} 
-            users={users} 
+          <Portfolio
+            bets={populatedBets}
+            users={users}
             themes={themes}
-            onSelectBet={setSelectedBet} 
-            onNewBet={() => handleOpenNewBet()} 
+            onSelectBet={setSelectedBet}
+            onNewBet={() => handleOpenNewBet()}
             onDeleteBet={handleDeleteBet}
             onArchiveBet={handleArchiveBet}
-            currentUser={currentUser} 
+            currentUser={currentUser}
           />
         );
       case 'outcomes':
         return (
-          <Outcomes 
-            outcomes={outcomes} 
-            measures={measures} 
-            users={users} 
+          <Outcomes
+            outcomes={outcomes}
+            measures={measures}
+            users={users}
             themes={themes}
-            currentUser={currentUser} 
-            onSelectOutcome={setSelectedOutcome} 
+            currentUser={currentUser}
+            onSelectOutcome={setSelectedOutcome}
             onNewOutcome={() => setIsCreatingOutcome(true)}
           />
         );
       case 'rhythms':
         return (
-          <Rhythms 
-            sessions={sessions} 
-            bets={populatedBets} 
-            currentUser={currentUser} 
-            onAddSession={handleAddSession} 
+          <Rhythms
+            sessions={sessions}
+            bets={populatedBets}
+            currentUser={currentUser}
+            onAddSession={handleAddSession}
             onUpdateSession={handleUpdateSession}
-            users={users} 
-            comments={comments} 
+            users={users}
+            comments={comments}
           />
         );
       case 'team':
         return (
-          <UserManagement 
-            users={users} 
+          <UserManagement
+            users={users}
             themes={themes}
-            currentUser={currentUser} 
+            currentUser={currentUser}
             onAddUser={handleAddUser}
             onUpdateUser={handleUpdateUser}
           />
         );
       case 'profile':
         return (
-          <Profile 
-            currentUser={currentUser} 
+          <Profile
+            currentUser={currentUser}
             themes={themes}
-            onUpdateUser={handleUpdateUser} 
+            onUpdateUser={handleUpdateUser}
           />
         );
       default:
@@ -392,7 +421,7 @@ const App: React.FC = () => {
   return (
     <Layout activeTab={activeTab} setActiveTab={setActiveTab} currentUser={currentUser} onSwitchRole={switchUser}>
       <div className="flex justify-end mb-4">
-        <button 
+        <button
           onClick={handleLogout}
           className="text-[10px] font-bold text-slate-400 hover:text-rose-500 uppercase tracking-widest transition-colors flex items-center gap-2"
         >
@@ -400,13 +429,13 @@ const App: React.FC = () => {
           Logout
         </button>
       </div>
-      
+
       {renderContent()}
-      
+
       {selectedBet && (
-        <BetDetail 
-          bet={populatedBets.find(b => b.id === selectedBet.id) || selectedBet} 
-          onClose={() => setSelectedBet(null)} 
+        <BetDetail
+          bet={populatedBets.find(b => b.id === selectedBet.id) || selectedBet}
+          onClose={() => setSelectedBet(null)}
           onUpdate={handleUpdateBet}
           onDelete={handleDeleteBet}
           onArchive={handleArchiveBet}
@@ -421,8 +450,8 @@ const App: React.FC = () => {
       )}
 
       {isCreatingBet && (
-        <BetCreate 
-          onClose={() => setIsCreatingBet(false)} 
+        <BetCreate
+          onClose={() => setIsCreatingBet(false)}
           onCreate={handleCreateBet}
           currentUser={currentUser}
           themes={themes}
@@ -431,7 +460,7 @@ const App: React.FC = () => {
       )}
 
       {isCreatingOutcome && (
-        <OutcomeCreate 
+        <OutcomeCreate
           onClose={() => setIsCreatingOutcome(false)}
           onCreate={handleCreateOutcome}
           currentUser={currentUser}
@@ -441,7 +470,7 @@ const App: React.FC = () => {
       )}
 
       {selectedOutcome && (
-        <OutcomeDetail 
+        <OutcomeDetail
           outcome={selectedOutcome}
           measures={measures}
           currentUser={currentUser}
