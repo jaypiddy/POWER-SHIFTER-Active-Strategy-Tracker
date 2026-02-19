@@ -54,6 +54,7 @@ const Auth: React.FC = () => {
     try {
       // Try popup first
       await signInWithPopup(auth, provider);
+      setGoogleLoading(false);
     } catch (err: any) {
       console.warn("Popup Auth Failed, trying Redirect:", err);
       if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request' || err.code === 'auth/operation-not-allowed' || err.message.includes('COOP')) {
@@ -64,6 +65,7 @@ const Auth: React.FC = () => {
         } catch (redirectErr: any) {
           console.error("Redirect Auth also failed:", redirectErr);
           setError(redirectErr.message || "Failed to sign in with Google (Redirect)");
+          setGoogleLoading(false);
         }
       }
 
