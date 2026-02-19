@@ -3,7 +3,7 @@ import CommentList from '../../CommentList';
 import { useBetDetail } from '../BetDetailContext';
 
 export const BetDiscussion: React.FC = () => {
-    const { bet, comments, currentUser, onAddComment } = useBetDetail();
+    const { bet, comments, currentUser, onAddComment, onUpdateComment, onDeleteComment } = useBetDetail();
 
     return (
         <CommentList
@@ -11,7 +11,10 @@ export const BetDiscussion: React.FC = () => {
             entityId={bet.id}
             entityType="Bet"
             currentUser={currentUser}
+
             onAddComment={onAddComment}
+            onUpdateComment={onUpdateComment}
+            onDeleteComment={onDeleteComment}
         />
     );
 };

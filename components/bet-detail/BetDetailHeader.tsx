@@ -7,6 +7,12 @@ export const BetDetailHeader: React.FC = () => {
     const [showSaved, setShowSaved] = useState(false);
     const theme = themes.find(t => t.id === bet.theme_id);
     const isArchived = bet.stage === 'Archived';
+    const [title, setTitle] = useState(bet.title);
+
+    // Sync local title if bet prop updates externally
+    React.useEffect(() => {
+        setTitle(bet.title);
+    }, [bet.title]);
 
     return (
         <>
@@ -29,9 +35,24 @@ export const BetDetailHeader: React.FC = () => {
                                 {bet.bet_type}
                             </span>
                         </div>
-                        <h2 className="text-3xl font-bold text-slate-900 leading-tight">
-                            {bet.title}
-                        </h2>
+                        <input
+                            type="text"
+                            value={title}
+                            disabled={!canEdit}
+                            onChange={(e) => setTitle(e.target.value)}
+                            onBlur={() => {
+                                if (title !== bet.title) {
+                                    onUpdate({ ...bet, title });
+                                }
+                            }}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    e.currentTarget.blur();
+                                }
+                            }}
+                            className="text-3xl font-bold text-slate-900 leading-tight w-full bg-transparent outline-none border-b-2 border-transparent focus:border-blue-500 transition-colors placeholder:text-slate-400"
+                            placeholder="Enter bet title..."
+                        />
                     </div>
 
                     <div className="flex items-center gap-3">

@@ -14,7 +14,8 @@ import {
   ChevronLeft,
   ChevronRight,
   PanelLeftClose,
-  PanelLeftOpen
+  PanelLeftOpen,
+  Search
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -36,6 +37,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, curr
 
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: PieChart },
+    { id: 'explorer', label: 'Strategy Explorer', icon: Search },
     { id: 'canvas', label: 'Strategy Canvas', icon: Map },
     { id: 'portfolio', label: 'Strategic Bets', icon: Briefcase },
     { id: 'outcomes', label: 'Outcomes', icon: Target },

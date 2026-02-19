@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Bet } from '../types';
+import { Bet, Theme, Outcome1Y, Canvas } from '../types';
 import { startStrategicCouncil } from '../services/geminiService';
 import { GenerateContentResponse } from '@google/genai';
 
@@ -11,9 +11,12 @@ interface Message {
 
 interface StrategicCouncilProps {
   bet: Bet;
+  theme?: Theme;
+  outcomes: Outcome1Y[];
+  canvas?: Canvas;
 }
 
-const StrategicCouncil: React.FC<StrategicCouncilProps> = ({ bet }) => {
+const StrategicCouncil: React.FC<StrategicCouncilProps> = ({ bet, theme, outcomes, canvas }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -36,7 +39,7 @@ const StrategicCouncil: React.FC<StrategicCouncilProps> = ({ bet }) => {
 
   const handleStartSession = () => {
     setHasStarted(true);
-    const chatSession = startStrategicCouncil(bet);
+    const chatSession = startStrategicCouncil(bet, theme, outcomes, canvas);
     setSession(chatSession);
     handleSendMessage("Hello, Council. I'd like to stress-test this bet.", chatSession);
   };

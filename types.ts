@@ -85,6 +85,7 @@ export interface Outcome1Y {
   time_horizon: string;
   status: Status;
   owner_user_ids: string[];
+  support_sponsor_id?: string;
   last_reviewed_at: string;
 }
 
@@ -121,7 +122,8 @@ export interface Bet {
   workspace_id: string;
   title: string;
   theme_id: string;
-  linked_outcome_ids: string[];
+  linked_outcome_ids?: string[]; // Deprecated in favor of measures, but kept for migration if needed
+  linked_measure_ids?: string[]; // New: Bets link to Measures
   bet_type: BetType;
   problem_statement: string;
   hypothesis: string;
@@ -135,6 +137,7 @@ export interface Bet {
   tshirt_size: TshirtSize;
   progress: number;
   actions: BetAction[]; // We keep this for UI convenience but it will be populated from the tasks collection
+  support_sponsor_id?: string;
   owner_user_ids: string[];
   stakeholder_user_ids: string[];
   created_at: string;
@@ -166,4 +169,17 @@ export interface RhythmSession {
   miro_link?: string;
   recording_uri?: string;
   archived_at?: string;
+}
+
+export interface ActivityLog {
+  id: string;
+  type: 'bet_created' | 'bet_updated' | 'bet_blocked' | 'outcome_updated' | 'comment_added' | 'task_completed';
+  entityId: string;
+  entityTitle: string;
+  timestamp: string; // ISO
+  userId: string;
+  userName: string;
+  userAvatar?: string;
+  details: string; // e.g. "Moved to In Progress"
+  meta?: any; // For flexible data
 }

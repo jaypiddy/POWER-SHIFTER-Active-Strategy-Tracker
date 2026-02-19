@@ -1,5 +1,5 @@
 import React, { createContext, useContext, ReactNode } from 'react';
-import { Bet, User, Comment, BetAction, Theme } from '../../types';
+import { Bet, User, Comment, BetAction, Theme, Outcome1Y, Canvas, ActivityLog, Measure } from '../../types';
 
 interface BetDetailContextType {
     bet: Bet;
@@ -12,11 +12,18 @@ interface BetDetailContextType {
     currentUser: User;
     comments: Comment[];
     onAddComment: (body: string) => void;
+    onUpdateComment: (comment: Comment) => void;
+    onDeleteComment: (commentId: string) => void;
     users: User[];
     themes: Theme[];
+    outcomes: Outcome1Y[];
+    measures: Measure[];
+    canvas: Canvas;
     canEdit: boolean;
     activeTab: string;
     setActiveTab: (tab: string) => void;
+    initialFocusTaskId?: string;
+    activityLogs: ActivityLog[];
 }
 
 const BetDetailContext = createContext<BetDetailContextType | undefined>(undefined);
@@ -37,6 +44,7 @@ interface BetDetailProviderProps extends Omit<BetDetailContextType, 'canEdit'> {
 export const BetDetailProvider: React.FC<BetDetailProviderProps> = ({
     children,
     currentUser,
+    measures,
     ...props
 }) => {
     // Calculate canEdit if not provided
@@ -47,6 +55,7 @@ export const BetDetailProvider: React.FC<BetDetailProviderProps> = ({
     const value = {
         ...props,
         currentUser,
+        measures,
         canEdit
     };
 

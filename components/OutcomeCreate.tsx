@@ -52,65 +52,65 @@ const OutcomeCreate: React.FC<OutcomeCreateProps> = ({ onClose, onCreate, curren
         <form onSubmit={handleSubmit} className="p-8 space-y-6 overflow-y-auto max-h-[75vh] no-scrollbar">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="md:col-span-2">
-              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Outcome Title</label>
-              <input 
+              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Outcome Title</label>
+              <input
                 required
                 autoFocus
-                type="text" 
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-bold"
+                type="text"
+                className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-sm text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none font-bold placeholder:text-slate-400"
                 value={formData.title}
-                onChange={e => setFormData({...formData, title: e.target.value})}
+                onChange={e => setFormData({ ...formData, title: e.target.value })}
                 placeholder="e.g., Expand Market Share by 20%"
               />
             </div>
 
             <div>
-              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Strategic Pillar (Theme)</label>
-              <select 
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-medium"
+              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Strategic Pillar (Theme)</label>
+              <select
+                className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-sm text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none font-medium"
                 value={formData.theme_id}
-                onChange={e => setFormData({...formData, theme_id: e.target.value})}
+                onChange={e => setFormData({ ...formData, theme_id: e.target.value })}
               >
                 {themes.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
               </select>
             </div>
 
             <div>
-              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Primary Owner</label>
-              <select 
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-medium"
+              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Primary Owner</label>
+              <select
+                className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-sm text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none font-medium"
                 value={formData.owner_id}
-                onChange={e => setFormData({...formData, owner_id: e.target.value})}
+                onChange={e => setFormData({ ...formData, owner_id: e.target.value })}
               >
                 {users.map(u => <option key={u.id} value={u.id}>{u.firstName} {u.lastName}</option>)}
               </select>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-6 p-4 bg-slate-50 rounded-xl border border-slate-100">
+          <div className="grid grid-cols-1 gap-6 p-4 bg-slate-50 rounded-xl border border-slate-200">
             <div>
-              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Target Year / Horizon</label>
-              <input 
+              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Target Year / Horizon</label>
+              <input
                 type="text"
                 required
-                className="w-full bg-white border border-slate-200 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                className="w-full bg-white border border-slate-300 rounded-lg px-4 py-2 text-sm text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none"
                 value={formData.time_horizon}
-                onChange={e => setFormData({...formData, time_horizon: e.target.value})}
+                onChange={e => setFormData({ ...formData, time_horizon: e.target.value })}
                 placeholder="e.g., 2024"
               />
             </div>
           </div>
 
           <div className="pt-4 flex gap-4">
-            <button 
-              type="button" 
+            <button
+              type="button"
               onClick={onClose}
               className="flex-1 py-4 border border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-50 transition-all"
             >
               Cancel
             </button>
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               className={`flex-1 py-4 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 shadow-xl shadow-blue-900/20 transition-all active:scale-95 flex items-center justify-center gap-2`}
             >
               <i className="fas fa-bullseye text-xs"></i>

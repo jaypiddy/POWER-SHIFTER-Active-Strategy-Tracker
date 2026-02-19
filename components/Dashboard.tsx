@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Bet, Outcome1Y, RhythmSession, User, Theme } from '../types';
 import { generateStrategyReport } from '../services/geminiService';
 import StrategyReport from './StrategyReport';
+import ActivityFeed from './ActivityFeed';
 import {
   Play,
   Ban,
@@ -14,8 +15,10 @@ import {
   FileText,
   Loader2,
   Activity,
-  TrendingUp
+  TrendingUp,
+  Info
 } from 'lucide-react';
+import { InfoTooltip } from './InfoTooltip';
 
 interface DashboardProps {
   bets: Bet[];
@@ -24,9 +27,10 @@ interface DashboardProps {
   currentUser: User;
   themes: Theme[];
   onNewBet: (themeId?: string) => void;
+  onNavigate?: (entityId: string, tab?: string) => void;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ bets, outcomes, sessions, currentUser, themes, onNewBet }) => {
+const Dashboard: React.FC<DashboardProps> = ({ bets, outcomes, sessions, currentUser, themes, onNewBet, onNavigate }) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [reportData, setReportData] = useState<string | null>(null);
 
@@ -86,11 +90,22 @@ const Dashboard: React.FC<DashboardProps> = ({ bets, outcomes, sessions, current
       </header>
 
       {/* Bento Grid Layout */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 auto-rows-[minmax(140px,auto)]">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-[minmax(140px,auto)]">
 
         {/* Strategic Coverage (Hero Metric) */}
-        <div className="col-span-1 md:col-span-2 md:row-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-6 relative overflow-hidden group hover:border-slate-700 transition-all shadow-lg shadow-black/20">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/10 rounded-full blur-3xl -mr-10 -mt-10"></div>
+        <div className="col-span-1 md:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-6 relative group hover:border-slate-700 transition-all shadow-lg shadow-black/20">
+          <div className="absolute inset-0 overflow-hidden rounded-2xl">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/10 rounded-full blur-3xl -mr-10 -mt-10"></div>
+          </div>
+
+          <div className="absolute top-6 right-6 z-20">
+            <InfoTooltip
+              what="Tracking how many of your 1-Year Outcomes are directly supported by Active Bets."
+              good="> 80% coverage. Most goals have an action plan."
+              bad="< 50%. You have goals that are just wishes without a plan."
+            />
+          </div>
+
           <div className="flex flex-col h-full justify-between relative z-10">
             <div className="flex items-center gap-3 mb-2">
               <div className={`p-2 rounded-lg ${coveragePercent < 70 ? 'bg-amber-500/10 text-amber-500' : 'bg-green-500/10 text-green-500'}`}>
@@ -114,54 +129,27 @@ const Dashboard: React.FC<DashboardProps> = ({ bets, outcomes, sessions, current
           </div>
         </div>
 
-        {/* Active Bets */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 hover:border-blue-500/30 transition-all hover:bg-slate-900/80 group">
-          <div className="flex justify-between items-start">
+        {/* Upcoming Rhythm (Tall Card - Now same row height/priority) */}
+        <div className="col-span-1 bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col relative">
+          <div className="absolute inset-0 overflow-hidden rounded-2xl pointer-events-none">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-full blur-2xl"></div>
+          </div>
+
+          <div className="flex items-center justify-between mb-4 relative z-10">
+            <div className="flex items-center gap-2">
+              <History className="w-4 h-4 text-blue-400" />
+              <h3 className="font-bold text-slate-300">Rhythm</h3>
+            </div>
             <div>
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Active Bets</p>
-              <h4 className="text-3xl font-mono font-bold text-white group-hover:text-blue-400 transition-colors">{activeBets.length}</h4>
-            </div>
-            <div className="p-2 bg-blue-500/10 rounded-lg text-blue-500">
-              <Play className="w-5 h-5" />
-            </div>
-          </div>
-        </div>
-
-        {/* Blocked Items */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 hover:border-rose-500/30 transition-all hover:bg-slate-900/80 group">
-          <div className="flex justify-between items-start">
-            <div>
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Blocked</p>
-              <h4 className="text-3xl font-mono font-bold text-white group-hover:text-rose-400 transition-colors">{blockedBets.length}</h4>
-            </div>
-            <div className="p-2 bg-rose-500/10 rounded-lg text-rose-500">
-              <Ban className="w-5 h-5" />
+              <InfoTooltip
+                what="Adherence to your strategic operating cadence and meeting schedule."
+                good="Consistent sessions and documented outcomes."
+                bad="Missed meetings or 'zombie' standing meetings with no value."
+              />
             </div>
           </div>
-        </div>
 
-        {/* Orphaned Goals */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 hover:border-amber-500/30 transition-all hover:bg-slate-900/80 group">
-          <div className="flex justify-between items-start">
-            <div>
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Orphaned</p>
-              <h4 className="text-3xl font-mono font-bold text-white group-hover:text-amber-400 transition-colors">{orphanedOutcomes.length}</h4>
-            </div>
-            <div className="p-2 bg-amber-500/10 rounded-lg text-amber-500">
-              <Link2Off className="w-5 h-5" />
-            </div>
-          </div>
-        </div>
-
-        {/* Upcoming Rhythm (Tall Card) */}
-        <div className="md:row-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-full blur-2xl"></div>
-          <div className="flex items-center gap-2 mb-4">
-            <History className="w-4 h-4 text-blue-400" />
-            <h3 className="font-bold text-slate-300">Rhythm</h3>
-          </div>
-
-          <div className="flex-1 space-y-4">
+          <div className="flex-1 space-y-4 relative z-10">
             {sessions.filter(s => s.status === 'Planned').slice(0, 3).map(s => (
               <div key={s.id} className="relative pl-4 border-l-2 border-slate-700 py-1 hover:border-blue-500 transition-colors group">
                 <p className="font-medium text-slate-200 text-sm group-hover:text-blue-300 transition-colors">{s.name}</p>
@@ -171,10 +159,71 @@ const Dashboard: React.FC<DashboardProps> = ({ bets, outcomes, sessions, current
           </div>
 
           {canAct && (
-            <button className="mt-4 w-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-bold py-2 rounded-lg transition-colors border border-slate-700">
+            <button className="mt-4 w-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-bold py-2 rounded-lg transition-colors border border-slate-700 relative z-10">
               Join Session
             </button>
           )}
+        </div>
+
+        {/* Row 2: Active Bets, Blocked, Orphaned */}
+        {/* Active Bets */}
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 hover:border-blue-500/30 transition-all hover:bg-slate-900/80 group relative">
+          <div className="flex justify-between items-start">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Active Bets</p>
+                <InfoTooltip
+                  what="The number of strategic initiatives currently in flight (In Progress)."
+                  good="3-5 per team. Focused execution."
+                  bad="> 7 per team. Context switching kills momentum."
+                />
+              </div>
+              <h4 className="text-3xl font-mono font-bold text-white group-hover:text-blue-400 transition-colors">{activeBets.length}</h4>
+            </div>
+            <div className="p-2 bg-blue-500/10 rounded-lg text-blue-500">
+              <Play className="w-5 h-5" />
+            </div>
+          </div>
+        </div>
+
+        {/* Orphaned Goals - Moved here per request */}
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 hover:border-amber-500/30 transition-all hover:bg-slate-900/80 group relative">
+          <div className="flex justify-between items-start">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Orphaned Bets</p>
+                <InfoTooltip
+                  what="1-Year Outcomes that have NO active bets linked to them."
+                  good="0. Every goal has a plan."
+                  bad="> 0. You are hoping for results rather than planning for them."
+                />
+              </div>
+              <h4 className="text-3xl font-mono font-bold text-white group-hover:text-amber-400 transition-colors">{orphanedOutcomes.length}</h4>
+            </div>
+            <div className="p-2 bg-amber-500/10 rounded-lg text-amber-500">
+              <Link2Off className="w-5 h-5" />
+            </div>
+          </div>
+        </div>
+
+        {/* Blocked Items */}
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 hover:border-rose-500/30 transition-all hover:bg-slate-900/80 group relative">
+          <div className="flex justify-between items-start">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Blocked Bets</p>
+                <InfoTooltip
+                  what="Bets that cannot proceed due to external dependencies or issues."
+                  good="0. Flow is unimpeded."
+                  bad="> 0. Strategy is stalled. Needs unblocking immediately."
+                />
+              </div>
+              <h4 className="text-3xl font-mono font-bold text-white group-hover:text-rose-400 transition-colors">{blockedBets.length}</h4>
+            </div>
+            <div className="p-2 bg-rose-500/10 rounded-lg text-rose-500">
+              <Ban className="w-5 h-5" />
+            </div>
+          </div>
         </div>
 
       </div>
@@ -224,112 +273,137 @@ const Dashboard: React.FC<DashboardProps> = ({ bets, outcomes, sessions, current
         </section>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Col: Outcome Health */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="bg-slate-900 rounded-xl shadow-lg border border-slate-800 overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-800 flex justify-between items-center bg-slate-950/30">
-              <h3 className="font-bold text-slate-200 flex items-center gap-2">
-                <Activity className="w-4 h-4 text-slate-500" />
-                Outcomes Health by Theme
-              </h3>
-              <button className="text-blue-400 text-sm font-medium hover:text-blue-300 transition-colors">View All</button>
-            </div>
-            <div className="p-6 space-y-4">
-              {themes.map((theme) => {
-                const themeOutcomes = outcomes.filter(o => o.theme_id === theme.id);
-                const status = themeOutcomes.some(o => o.status === 'Red') ? 'Red' : themeOutcomes.some(o => o.status === 'Yellow') ? 'Yellow' : 'Green';
+      {/* Right Col: Active Strategy Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+        {/* System Balance (Adaptive Cycle) */}
+        <div className="bg-slate-900 rounded-xl shadow-lg border border-slate-800 p-6 relative">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-bold text-slate-200 flex items-center gap-2">
+              <Activity className="w-4 h-4 text-blue-400" />
+              System Balance
+            </h3>
+            <InfoTooltip
+              what="The mix of work types: Renewal (Discovery), Growth (Delivery), and Maturity (Enablement)."
+              good="A balanced mix appropriate for your stage (e.g., 30/50/20)."
+              bad="100% Delivery (Feature Factory) or 100% Discovery (Science Project)."
+            />
+          </div>
+
+          <div className="space-y-4">
+            {/* Distribution Bar */}
+            <div className="flex h-4 rounded-full overflow-hidden w-full">
+              {['Discovery', 'Delivery', 'Enablement'].map((type) => {
+                const count = activeBets.filter(b => b.bet_type === type).length;
+                const pct = activeBets.length > 0 ? (count / activeBets.length) * 100 : 0;
+                const color = type === 'Discovery' ? 'bg-purple-500' : type === 'Delivery' ? 'bg-blue-500' : 'bg-emerald-500';
+
+                if (pct === 0) return null;
+
                 return (
-                  <div key={theme.id} className="flex items-center gap-4 group">
-                    <div className="w-2.5 h-12 bg-slate-800 rounded-full overflow-hidden flex flex-col justify-end">
-                      <div className={`w-full h-1/2 ${status === 'Red' ? 'bg-rose-500' : status === 'Yellow' ? 'bg-amber-500' : 'bg-emerald-500'}`}></div>
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex justify-between items-end mb-1">
-                        <span className="font-semibold text-slate-300 group-hover:text-white transition-colors">{theme.name}</span>
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-bold uppercase ${status === 'Green' ? 'bg-emerald-500/10 text-emerald-400' :
-                          status === 'Yellow' ? 'bg-amber-500/10 text-amber-400' : 'bg-rose-500/10 text-rose-400'
-                          }`}>{status}</span>
-                      </div>
-                      <div className="text-sm text-slate-500 truncate">
-                        {themeOutcomes.length} linked outcomes
-                      </div>
+                  <div key={type} style={{ width: `${pct}%` }} className={`${color} hover:opacity-90 transition-opacity relative group`}>
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/20">
+                      <span className="text-[10px] font-bold text-white shadow-sm">{Math.round(pct)}%</span>
                     </div>
                   </div>
                 );
               })}
             </div>
-          </div>
 
-          <div className="bg-slate-900 rounded-xl shadow-lg border border-slate-800 overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-800 bg-slate-950/30">
-              <h3 className="font-bold text-slate-200 flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 text-rose-500" />
-                Priority Attention: At-Risk Bets
-              </h3>
-            </div>
-            <div className="p-0">
-              {atRiskBets.length > 0 ? (
-                atRiskBets.map((bet) => (
-                  <div key={bet.id} className="px-6 py-4 flex items-center gap-4 hover:bg-slate-800/50 transition-colors border-b last:border-0 border-slate-800 group">
-                    <div className="w-10 h-10 rounded-lg bg-rose-500/10 flex items-center justify-center shrink-0 border border-rose-500/20 group-hover:border-rose-500/40 transition-colors">
-                      <AlertTriangle className="w-5 h-5 text-rose-500" />
+            {/* Legend */}
+            <div className="grid grid-cols-1 gap-3">
+              {[
+                { label: 'Renewal (Discovery)', type: 'Discovery', color: 'bg-purple-500', desc: 'Exploration' },
+                { label: 'Growth (Delivery)', type: 'Delivery', color: 'bg-blue-500', desc: 'Execution' },
+                { label: 'Maturity (Enablement)', type: 'Enablement', color: 'bg-emerald-500', desc: 'Systems' }
+              ].map(item => {
+                const count = activeBets.filter(b => b.bet_type === item.type).length;
+                return (
+                  <div key={item.type} className="flex justify-between items-center text-sm">
+                    <div className="flex items-center gap-2">
+                      <div className={`w-2 h-2 rounded-full ${item.color}`}></div>
+                      <span className="text-slate-300 font-medium">{item.label}</span>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-slate-200 truncate group-hover:text-white">{bet.title}</p>
-                      <p className="text-xs text-slate-500 font-mono">Target: {bet.estimated_completion} • <span className="text-slate-400">{bet.progress}%</span></p>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-xs font-bold text-rose-400 uppercase bg-rose-500/10 px-2 py-1 rounded border border-rose-500/20">{bet.stage}</span>
-                    </div>
+                    <span className="text-slate-500 font-mono">{count}</span>
                   </div>
-                ))
-              ) : (
-                <div className="p-12 text-center text-slate-500">
-                  <CheckCircle className="w-12 h-12 mb-3 text-emerald-500/20 mx-auto" />
-                  <p>All bets performing as expected.</p>
-                </div>
-              )}
+                );
+              })}
             </div>
           </div>
         </div>
 
-        {/* Right Col: Recent Activity */}
-        <div className="space-y-6">
-          <div className="bg-slate-900 rounded-xl shadow-lg border border-slate-800 p-6">
-            <h3 className="font-bold text-slate-200 mb-4 flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-blue-400" />
-              Strategic Pulse
+        {/* Lethargy Detector (Stale Bets) */}
+        <div className="bg-slate-900 rounded-xl shadow-lg border border-slate-800 relative">
+          <div className="px-6 py-4 border-b border-slate-800 bg-slate-950/30 flex justify-between items-center rounded-t-xl">
+            <h3 className="font-bold text-slate-200 flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-amber-500" />
+              Lethargy Detector
             </h3>
-            <div className="space-y-4">
-              <div className="relative pl-6 pb-4 border-l border-slate-800 group">
-                <div className="absolute -left-1 top-1 w-2 h-2 rounded-full bg-blue-500 ring-4 ring-slate-900 group-hover:ring-blue-500/20 transition-all"></div>
-                <p className="text-xs text-slate-500 font-mono mb-1">2 hours ago</p>
-                <p className="text-sm font-medium text-slate-300 group-hover:text-slate-100 transition-colors">Bet "AI Strategy Copilot" progress updated to 65%</p>
-              </div>
-              <div className="relative pl-6 pb-4 border-l border-slate-800 group">
-                <div className="absolute -left-1 top-1 w-2 h-2 rounded-full bg-emerald-500 ring-4 ring-slate-900 group-hover:ring-emerald-500/20 transition-all"></div>
-                <p className="text-xs text-slate-500 font-mono mb-1">Yesterday</p>
-                <p className="text-sm font-medium text-slate-300 group-hover:text-slate-100 transition-colors">New Outcome added: "Scalable Infrastructure Upgrade"</p>
-              </div>
-              <div className="relative pl-6 border-l border-slate-800 group">
-                <div className="absolute -left-1 top-1 w-2 h-2 rounded-full bg-slate-600 ring-4 ring-slate-900"></div>
-                <p className="text-xs text-slate-500 font-mono mb-1">3 days ago</p>
-                <p className="text-sm font-medium text-slate-300 group-hover:text-slate-100 transition-colors">Quarterly Reset Version 2024.Q1 archived.</p>
-              </div>
-            </div>
+            <InfoTooltip
+              what="Identifies 'Active' bets that haven't had any updates for > 30 days."
+              good="0 Stagnant bets. High velocity."
+              bad="Stagnant bets exist. These are 'Zombie Projects' eating resources."
+            />
+          </div>
+
+          <div className="p-0">
+            {(() => {
+              const staleThreshold = new Date();
+              staleThreshold.setDate(staleThreshold.getDate() - 30);
+              const staleBets = activeBets.filter(b => b.stage === 'In Progress' && new Date(b.updated_at) < staleThreshold);
+
+              if (staleBets.length === 0) {
+                return (
+                  <div className="p-8 text-center">
+                    <div className="w-12 h-12 bg-slate-800/50 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <Activity className="w-6 h-6 text-slate-600" />
+                    </div>
+                    <p className="text-sm text-slate-400 font-medium">All active bets are moving.</p>
+                    <p className="text-xs text-slate-600 mt-1">No stagnation detected (&gt;30 days).</p>
+                  </div>
+                );
+              }
+
+              return (
+                <div>
+                  {staleBets.map(bet => {
+                    const daysStale = Math.floor((new Date().getTime() - new Date(bet.updated_at).getTime()) / (1000 * 3600 * 24));
+                    return (
+                      <div key={bet.id} className="px-6 py-4 border-b last:border-0 border-slate-800 hover:bg-slate-800/30 transition-colors group">
+                        <div className="flex justify-between items-start mb-1">
+                          <h4 className="text-sm font-bold text-slate-300 group-hover:text-amber-400 transition-colors line-clamp-1">{bet.title}</h4>
+                          <span className="text-[10px] font-bold text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">
+                            {daysStale}d
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-500 font-mono">Last update: {new Date(bet.updated_at).toLocaleDateString()}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
           </div>
         </div>
       </div>
 
+      {/* Right Col: Activity Feed */}
+      <div className="space-y-6">
+        <ActivityFeed onNavigate={onNavigate} />
+      </div>
+
+
+
       {/* Strategy Report Modal */}
-      {reportData && (
-        <StrategyReport
-          content={reportData}
-          onClose={() => setReportData(null)}
-        />
-      )}
-    </div>
+      {
+        reportData && (
+          <StrategyReport
+            content={reportData}
+            onClose={() => setReportData(null)}
+          />
+        )
+      }
+    </div >
   );
 };
 

@@ -3,7 +3,10 @@ import StrategicCouncil from '../../StrategicCouncil';
 import { useBetDetail } from '../BetDetailContext';
 
 export const BetCouncil: React.FC = () => {
-    const { bet } = useBetDetail();
+    const { bet, themes, outcomes, canvas } = useBetDetail();
+
+    const theme = themes.find(t => t.id === bet.theme_id);
+    const linkedOutcomes = (outcomes || []).filter(o => bet.linked_outcome_ids?.includes(o.id));
 
     return (
         <div className="space-y-6">
@@ -18,7 +21,12 @@ export const BetCouncil: React.FC = () => {
                     </p>
                 </div>
             </div>
-            <StrategicCouncil bet={bet} />
+            <StrategicCouncil
+                bet={bet}
+                theme={theme}
+                outcomes={linkedOutcomes}
+                canvas={canvas}
+            />
         </div>
     );
 };

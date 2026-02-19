@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { AnimatePresence } from 'framer-motion';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { auth, db } from './services/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
@@ -12,6 +13,7 @@ import {
   saveMeasure,
   deleteMeasure,
   saveComment,
+  deleteComment,
   saveSession,
   deleteBet,
   saveTheme,
@@ -33,6 +35,7 @@ import BetCreate from './components/BetCreate';
 import UserManagement from './components/UserManagement';
 import Auth from './components/Auth';
 import Profile from './components/Profile';
+import StrategyExplorer from './components/StrategyExplorer';
 import { INITIAL_CANVAS } from './mockData';
 import { THEMES as SEED_THEMES } from './constants';
 import { Bet, User, Comment, RhythmSession, Outcome1Y, Measure, CanvasSnapshot, Canvas as CanvasType, Theme, BetAction } from './types';
@@ -53,9 +56,12 @@ const App: React.FC = () => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [sessions, setSessions] = useState<RhythmSession[]>([]);
   const [snapshots, setSnapshots] = useState<CanvasSnapshot[]>([]);
+  const [activityLogs, setActivityLogs] = useState<import('./types').ActivityLog[]>([]);
   const [canvas, setCanvas] = useState<CanvasType>(INITIAL_CANVAS);
 
   const [selectedBet, setSelectedBet] = useState<Bet | null>(null);
+  const [activeTaskId, setActiveTaskId] = useState<string | undefined>(undefined);
+  const [initialBetTab, setInitialBetTab] = useState<string | undefined>(undefined);
   const [selectedOutcome, setSelectedOutcome] = useState<Outcome1Y | null>(null);
   const [isCreatingBet, setIsCreatingBet] = useState(false);
   const [initialBetThemeId, setInitialBetThemeId] = useState<string | undefined>(undefined);
@@ -64,39 +70,42 @@ const App: React.FC = () => {
   // Auth Listener
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
-      setPermissionError(false);
       if (fbUser) {
+        setAuthLoading(true);
         try {
-          // ADD A SMALL DELAY to ensure the background Firestore Auth handshake completes.
-          await new Promise(resolve => setTimeout(resolve, 500));
+          // Check if user exists in Firestore
+          const userProfile = await getUserById(fbUser.uid);
 
-          const userData = await getUserById(fbUser.uid);
-          if (userData) {
-            setCurrentUser(userData);
+          if (userProfile) {
+            setCurrentUser(userProfile);
+            setPermissionError(false);
           } else {
-            const fallbackUser: User = {
+            // New user - create profile
+            const newUser: User = {
               id: fbUser.uid,
-              firstName: fbUser.displayName?.split(' ')[0] || 'Unknown',
-              lastName: fbUser.displayName?.split(' ')[1] || 'User',
+              firstName: fbUser.displayName?.split(' ')[0] || 'User',
+              lastName: fbUser.displayName?.split(' ')[1] || '',
               email: fbUser.email || '',
-              role: 'Editor',
-              title: 'Strategic Partner',
+              role: 'Viewer', // Default role
+              title: '',
               active: true,
               avatar: fbUser.photoURL || `https://ui-avatars.com/api/?name=${fbUser.displayName || 'User'}&background=random`
             };
-            await saveUser(fallbackUser);
-            setCurrentUser(fallbackUser);
+            await saveUser(newUser);
+            setCurrentUser(newUser);
           }
-        } catch (error) {
-          console.error("Critical: Failed to sync user profile from Firestore:", error);
-          if (error instanceof Error && (error.message.includes('permissions') || error.message.includes('permission-denied') || (error as any).code === 'permission-denied')) {
+        } catch (error: any) {
+          console.error("Auth Error:", error);
+          if (error.code === 'permission-denied') {
             setPermissionError(true);
           }
+        } finally {
+          setAuthLoading(false);
         }
       } else {
         setCurrentUser(null);
+        setAuthLoading(false);
       }
-      setAuthLoading(false);
     });
 
     return () => unsubscribe();
@@ -122,6 +131,7 @@ const App: React.FC = () => {
     const unsubComments = subscribeToCollection('comments', (data) => setComments(data as Comment[]), 'created_at');
     const unsubSessions = subscribeToCollection('sessions', (data) => setSessions(data as RhythmSession[]), 'scheduled_at');
     const unsubSnapshots = subscribeToCollection('snapshots', (data) => setSnapshots(data as CanvasSnapshot[]), 'created_at');
+    const unsubActivityLogs = subscribeToCollection('activity_logs', (data) => setActivityLogs(data as import('./types').ActivityLog[]), 'timestamp');
 
     // Strategy Canvas Subscription (Document c1)
     const unsubCanvas = onSnapshot(doc(db, 'canvas', 'c1'), (snapshot) => {
@@ -144,6 +154,7 @@ const App: React.FC = () => {
       unsubComments();
       unsubSessions();
       unsubSnapshots();
+      unsubActivityLogs();
       unsubCanvas();
     };
   }, [currentUser]);
@@ -171,6 +182,14 @@ const App: React.FC = () => {
       created_at: new Date().toISOString(),
     };
     await saveComment(newComment);
+  };
+
+  const handleUpdateComment = async (comment: Comment) => {
+    await saveComment(comment);
+  };
+
+  const handleDeleteComment = async (commentId: string) => {
+    await deleteComment(commentId);
   };
 
   const handleUpdateCanvas = async (updatedCanvas: CanvasType) => {
@@ -217,6 +236,10 @@ const App: React.FC = () => {
 
   const handleUpdateMeasure = async (updatedMeasure: Measure) => {
     await saveMeasure(updatedMeasure);
+  };
+
+  const handleDeleteMeasure = async (measureId: string) => {
+    await deleteMeasure(measureId);
   };
 
   const handleAddSession = async (newSession: RhythmSession) => {
@@ -280,10 +303,54 @@ const App: React.FC = () => {
 
   const handleSaveTask = async (task: BetAction) => {
     await saveTask(task);
+
+    // Auto-calculate progress for the related bet
+    const relatedBet = bets.find(b => b.id === task.bet_id);
+    if (relatedBet) {
+      const otherTasks = tasks.filter(t => t.bet_id === task.bet_id && t.id !== task.id);
+      const allTasks = [...otherTasks, task];
+
+      const total = allTasks.length;
+      const sumProgress = allTasks.reduce((acc, t) => acc + Number(t.progress || 0), 0);
+      const newProgress = total === 0 ? 0 : Math.round(sumProgress / total);
+
+      if (relatedBet.progress !== newProgress) {
+        const updatedBet = {
+          ...relatedBet,
+          progress: newProgress,
+          updated_at: new Date().toISOString()
+        };
+        // Optimistic update for immediate feedback
+        setBets(prev => prev.map(b => b.id === updatedBet.id ? updatedBet : b));
+        await saveBet(updatedBet);
+      }
+    }
   };
 
   const handleDeleteTask = async (taskId: string) => {
+    const taskToDelete = tasks.find(t => t.id === taskId);
     await deleteTask(taskId);
+
+    if (taskToDelete) {
+      const relatedBet = bets.find(b => b.id === taskToDelete.bet_id);
+      if (relatedBet) {
+        const remainingTasks = tasks.filter(t => t.bet_id === taskToDelete.bet_id && t.id !== taskId);
+
+        const total = remainingTasks.length;
+        const sumProgress = remainingTasks.reduce((acc, t) => acc + Number(t.progress || 0), 0);
+        const newProgress = total === 0 ? 0 : Math.round(sumProgress / total);
+
+        if (relatedBet.progress !== newProgress) {
+          const updatedBet = {
+            ...relatedBet,
+            progress: newProgress,
+            updated_at: new Date().toISOString()
+          };
+          setBets(prev => prev.map(b => b.id === updatedBet.id ? updatedBet : b));
+          await saveBet(updatedBet);
+        }
+      }
+    }
   };
 
   const switchUser = (role: User['role']) => {
@@ -337,10 +404,47 @@ const App: React.FC = () => {
     return <Auth />;
   }
 
+  const handleNavigate = (entityId: string, tab?: string) => {
+    // Try to find if it's a bet
+    const bet = bets.find(b => b.id === entityId);
+    if (bet) {
+      setInitialBetTab(tab);
+      setSelectedBet(bet);
+      return;
+    }
+    // Try outcome
+    const outcome = outcomes.find(o => o.id === entityId);
+    if (outcome) {
+      setSelectedOutcome(outcome);
+      setActiveTab('outcomes');
+      return;
+    }
+  };
+
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
-        return <Dashboard bets={populatedBets} outcomes={outcomes} sessions={sessions} currentUser={currentUser} themes={themes} onNewBet={handleOpenNewBet} />;
+        return <Dashboard
+          bets={populatedBets}
+          outcomes={outcomes}
+          sessions={sessions}
+          currentUser={currentUser}
+          themes={themes}
+          onNewBet={handleOpenNewBet}
+          onNavigate={handleNavigate}
+        />;
+      case 'explorer':
+        return (
+          <StrategyExplorer
+            outcomes={outcomes}
+            measures={measures}
+            bets={populatedBets}
+            tasks={tasks}
+            users={users}
+            themes={themes}
+            onNavigate={handleNavigate}
+          />
+        );
       case 'canvas':
         return (
           <Canvas
@@ -364,7 +468,10 @@ const App: React.FC = () => {
             bets={populatedBets}
             users={users}
             themes={themes}
-            onSelectBet={setSelectedBet}
+            onSelectBet={(bet, taskId) => {
+              setSelectedBet(bet);
+              setActiveTaskId(taskId);
+            }}
             onNewBet={() => handleOpenNewBet()}
             onDeleteBet={handleDeleteBet}
             onArchiveBet={handleArchiveBet}
@@ -420,10 +527,19 @@ const App: React.FC = () => {
 
   return (
     <Layout activeTab={activeTab} setActiveTab={setActiveTab} currentUser={currentUser} onSwitchRole={switchUser}>
-      <div className="flex justify-end mb-4">
+      <div className="flex justify-end mb-4 gap-6">
+        {activeTab === 'profile' && (
+          <button
+            onClick={() => setActiveTab('dashboard')}
+            className="text-[10px] font-bold text-emerald-500 hover:text-emerald-400 uppercase tracking-widest transition-colors flex items-center gap-2"
+          >
+            <i className="fas fa-check"></i>
+            Close Profile
+          </button>
+        )}
         <button
           onClick={handleLogout}
-          className="text-[10px] font-bold text-slate-400 hover:text-rose-500 uppercase tracking-widest transition-colors flex items-center gap-2"
+          className="text-[10px] font-bold text-rose-500 hover:text-rose-400 uppercase tracking-widest transition-colors flex items-center gap-2"
         >
           <i className="fas fa-sign-out-alt"></i>
           Logout
@@ -432,22 +548,36 @@ const App: React.FC = () => {
 
       {renderContent()}
 
-      {selectedBet && (
-        <BetDetail
-          bet={populatedBets.find(b => b.id === selectedBet.id) || selectedBet}
-          onClose={() => setSelectedBet(null)}
-          onUpdate={handleUpdateBet}
-          onDelete={handleDeleteBet}
-          onArchive={handleArchiveBet}
-          onSaveTask={handleSaveTask}
-          onDeleteTask={handleDeleteTask}
-          currentUser={currentUser}
-          comments={comments}
-          onAddComment={(body) => handleAddComment('Bet', selectedBet.id, body)}
-          users={users}
-          themes={themes}
-        />
-      )}
+      <AnimatePresence>
+        {selectedBet && (
+          <BetDetail
+            key="bet-detail"
+            bet={populatedBets.find(b => b.id === selectedBet.id) || selectedBet}
+            onClose={() => {
+              setSelectedBet(null);
+              setActiveTaskId(undefined);
+              setInitialBetTab(undefined);
+            }}
+            onUpdate={handleUpdateBet}
+            onDelete={handleDeleteBet}
+            onArchive={handleArchiveBet}
+            onSaveTask={handleSaveTask}
+            onDeleteTask={handleDeleteTask}
+            currentUser={currentUser}
+            comments={comments}
+            onAddComment={(body) => handleAddComment('Bet', selectedBet.id, body)}
+            onUpdateComment={handleUpdateComment}
+            onDeleteComment={handleDeleteComment}
+            users={users}
+            themes={themes}
+            initialFocusTaskId={activeTaskId}
+            activityLogs={activityLogs}
+            outcomes={outcomes}
+            measures={measures}
+            initialActiveTab={initialBetTab}
+          />
+        )}
+      </AnimatePresence>
 
       {isCreatingBet && (
         <BetCreate
@@ -478,8 +608,9 @@ const App: React.FC = () => {
           onUpdate={handleUpdateOutcome}
           onAddMeasure={handleAddMeasure}
           onUpdateMeasure={handleUpdateMeasure}
-          onDeleteMeasure={deleteMeasure}
+          onDeleteMeasure={handleDeleteMeasure}
           themes={themes}
+          users={users}
         />
       )}
     </Layout>

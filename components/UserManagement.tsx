@@ -89,7 +89,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, currentUser, the
           <p className="text-slate-500 mt-1">Manage access levels and strategic ownership areas.</p>
         </div>
         {isAdmin && (
-          <button 
+          <button
             onClick={openCreateModal}
             className="px-6 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 shadow-lg shadow-blue-900/10 transition-all flex items-center gap-2"
           >
@@ -103,7 +103,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, currentUser, the
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {themes.map(theme => {
           const owner = users.find(u => u.ownedThemeId === theme.id && u.ownershipType === 'Owner');
-          
+
           // A supporting user is someone whose primary ownedTheme is this one OR who has it in supportingPillars
           const supporting = users.filter(u => {
             const isPrimarySupporting = u.ownedThemeId === theme.id && u.ownershipType === 'Supporting';
@@ -112,14 +112,14 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, currentUser, the
             // Also ensure we don't count the primary owner in the supporting list
             return (isPrimarySupporting || isSecondarySupporting) && u.id !== owner?.id;
           });
-          
+
           return (
             <div key={theme.id} className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col h-full group hover:border-blue-300 transition-colors">
               <div className="flex items-center gap-2 mb-4">
                 <span className={`w-2 h-2 rounded-full bg-${theme.color}-500`}></span>
                 <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{theme.name}</h3>
               </div>
-              
+
               <div className="space-y-4 flex-1">
                 <div>
                   <p className="text-[9px] font-bold text-slate-300 uppercase mb-2">Primary Owner</p>
@@ -138,12 +138,12 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, currentUser, the
                   <div className="flex flex-wrap gap-1">
                     {supporting.map(u => (
                       <div key={u.id} className="relative group/avatar">
-                         <img src={u.avatar} className="w-6 h-6 rounded-full border-2 border-white bg-slate-100" alt="" />
-                         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover/avatar:block z-20">
-                            <div className="bg-slate-900 text-white text-[9px] font-bold px-2 py-1 rounded whitespace-nowrap">
-                              {u.firstName} {u.lastName}
-                            </div>
-                         </div>
+                        <img src={u.avatar} className="w-6 h-6 rounded-full border-2 border-white bg-slate-100" alt="" />
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover/avatar:block z-20">
+                          <div className="bg-slate-900 text-white text-[9px] font-bold px-2 py-1 rounded whitespace-nowrap">
+                            {u.firstName} {u.lastName}
+                          </div>
+                        </div>
                       </div>
                     ))}
                     {supporting.length === 0 && <span className="text-[10px] text-slate-300 font-light">None</span>}
@@ -170,7 +170,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, currentUser, the
             {users.length > 0 ? users.map(user => {
               const theme = themes.find(t => t.id === user.ownedThemeId);
               const supportCount = user.supportingPillars?.length || 0;
-              
+
               return (
                 <tr key={user.id} className="hover:bg-slate-50 transition-colors">
                   <td className="px-6 py-4">
@@ -180,19 +180,30 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, currentUser, the
                         <p className="font-bold text-slate-900">{user.firstName} {user.lastName}</p>
                         <p className="text-xs text-slate-500 font-light">{user.title}</p>
                       </div>
+                      {user.linkedinUrl && (
+                        <a
+                          href={user.linkedinUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="w-6 h-6 rounded-full bg-[#0077b5] flex items-center justify-center text-white hover:bg-[#006396] transition-colors shadow-sm"
+                          title="View LinkedIn Profile"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <i className="fab fa-linkedin-in text-[10px]"></i>
+                        </a>
+                      )}
                     </div>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
-                      <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${
-                        user.role === 'Admin' ? 'bg-blue-50 text-blue-600' :
+                      <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${user.role === 'Admin' ? 'bg-blue-50 text-blue-600' :
                         user.role === 'Editor' ? 'bg-slate-100 text-slate-600' :
-                        'bg-amber-50 text-amber-600'
-                      }`}>
+                          'bg-amber-50 text-amber-600'
+                        }`}>
                         {user.role}
                       </span>
                       {isAdmin && user.id !== currentUser.id && (
-                        <button 
+                        <button
                           onClick={() => handleToggleRole(user)}
                           className="p-1 text-slate-300 hover:text-blue-500 transition-colors"
                           title={`Switch to ${user.role === 'Admin' ? 'Editor' : 'Admin'}`}
@@ -216,7 +227,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, currentUser, the
                       ) : (
                         <span className="text-xs text-slate-300 font-light">Global / General</span>
                       )}
-                      
+
                       {supportCount > 0 && (
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <span className="text-[9px] font-bold text-slate-400 uppercase">Supporting:</span>
@@ -234,7 +245,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, currentUser, the
                   </td>
                   <td className="px-6 py-4 text-right">
                     {isAdmin && (
-                      <button 
+                      <button
                         onClick={() => openEditModal(user)}
                         className="text-slate-400 hover:text-blue-600 p-2 transition-colors"
                         title="Edit member details"
@@ -264,8 +275,8 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, currentUser, the
               <h3 className="font-bold text-slate-800 uppercase tracking-widest text-xs">
                 {modalMode === 'create' ? 'Invite Strategy Member' : 'Edit Strategy Member'}
               </h3>
-              <button 
-                onClick={() => { setModalMode(null); setEditingUserId(null); }} 
+              <button
+                onClick={() => { setModalMode(null); setEditingUserId(null); }}
                 className="text-slate-400 hover:text-slate-600 p-1"
               >
                 <i className="fas fa-times"></i>
@@ -274,35 +285,35 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, currentUser, the
             <form onSubmit={handleSubmit} className="p-8 space-y-6 text-slate-700">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">First Name</label>
-                  <input required type="text" className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" 
-                    value={formData.firstName} onChange={e => setFormData({...formData, firstName: e.target.value})} />
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">First Name</label>
+                  <input required type="text" className="w-full bg-white border border-slate-300 rounded-lg px-4 py-2 text-sm text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none"
+                    value={formData.firstName} onChange={e => setFormData({ ...formData, firstName: e.target.value })} />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Last Name</label>
-                  <input required type="text" className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" 
-                    value={formData.lastName} onChange={e => setFormData({...formData, lastName: e.target.value})} />
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Last Name</label>
+                  <input required type="text" className="w-full bg-white border border-slate-300 rounded-lg px-4 py-2 text-sm text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none"
+                    value={formData.lastName} onChange={e => setFormData({ ...formData, lastName: e.target.value })} />
                 </div>
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Email Address</label>
-                <input required type="email" className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" 
-                  value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
+                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Email Address</label>
+                <input required type="email" className="w-full bg-white border border-slate-300 rounded-lg px-4 py-2 text-sm text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none"
+                  value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Professional Title</label>
-                  <input required type="text" className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" 
-                    value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} placeholder="e.g. Head of Ops" />
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Professional Title</label>
+                  <input required type="text" className="w-full bg-white border border-slate-300 rounded-lg px-4 py-2 text-sm text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none"
+                    value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} placeholder="e.g. Head of Ops" />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Access Role</label>
-                  <select 
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                    value={formData.role} 
-                    onChange={e => setFormData({...formData, role: e.target.value as UserRole})}
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Access Role</label>
+                  <select
+                    className="w-full bg-white border border-slate-300 rounded-lg px-4 py-2 text-sm text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none"
+                    value={formData.role}
+                    onChange={e => setFormData({ ...formData, role: e.target.value as UserRole })}
                   >
                     <option value="Admin">Admin (Full Access)</option>
                     <option value="Editor">Editor (Bet Management)</option>
@@ -315,17 +326,17 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, currentUser, the
                 <p className="text-[10px] font-bold text-slate-800 uppercase tracking-widest border-b border-slate-200 pb-2">Primary Strategy Alignment</p>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[9px] font-bold text-slate-400 uppercase mb-2">Area of Strategy</label>
-                    <select className="w-full bg-white border border-slate-200 rounded-lg px-4 py-2 text-xs focus:ring-2 focus:ring-blue-500 outline-none"
-                      value={formData.ownedThemeId} onChange={e => setFormData({...formData, ownedThemeId: e.target.value})}>
+                    <label className="block text-[9px] font-bold text-slate-500 uppercase mb-2">Area of Strategy</label>
+                    <select className="w-full bg-white border border-slate-300 rounded-lg px-4 py-2 text-xs text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none"
+                      value={formData.ownedThemeId} onChange={e => setFormData({ ...formData, ownedThemeId: e.target.value })}>
                       <option value="">None (Global Support)</option>
                       {themes.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="block text-[9px] font-bold text-slate-400 uppercase mb-2">Ownership Level</label>
-                    <select className="w-full bg-white border border-slate-200 rounded-lg px-4 py-2 text-xs focus:ring-2 focus:ring-blue-500 outline-none"
-                      value={formData.ownershipType} onChange={e => setFormData({...formData, ownershipType: e.target.value as OwnershipType})}>
+                    <label className="block text-[9px] font-bold text-slate-500 uppercase mb-2">Ownership Level</label>
+                    <select className="w-full bg-white border border-slate-300 rounded-lg px-4 py-2 text-xs text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none"
+                      value={formData.ownershipType} onChange={e => setFormData({ ...formData, ownershipType: e.target.value as OwnershipType })}>
                       <option value="Owner">Primary Owner</option>
                       <option value="Supporting">Supporting Partner</option>
                     </select>
@@ -334,9 +345,9 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, currentUser, the
               </div>
 
               <div className="pt-4 flex gap-3">
-                <button 
-                  type="button" 
-                  onClick={() => { setModalMode(null); setEditingUserId(null); }} 
+                <button
+                  type="button"
+                  onClick={() => { setModalMode(null); setEditingUserId(null); }}
                   className="flex-1 py-3 border border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-50 transition-colors"
                 >
                   Cancel

@@ -17,7 +17,7 @@ const Profile: React.FC<ProfileProps> = ({ currentUser, themes, onUpdateUser }) 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
-  
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -72,7 +72,7 @@ const Profile: React.FC<ProfileProps> = ({ currentUser, themes, onUpdateUser }) 
 
   const handleDeleteAccount = async () => {
     if (deleteConfirmText.toLowerCase() !== 'delete') return;
-    
+
     setIsDeleting(true);
     try {
       const user = auth.currentUser;
@@ -95,8 +95,8 @@ const Profile: React.FC<ProfileProps> = ({ currentUser, themes, onUpdateUser }) 
   return (
     <div className="max-w-4xl mx-auto space-y-12 pb-20 animate-in fade-in duration-500">
       <header>
-        <h1 className="text-3xl font-bold text-slate-900">Profile & Settings</h1>
-        <p className="text-slate-500 mt-1 font-light">Manage your strategic identity and personal preferences.</p>
+        <h1 className="text-3xl font-bold text-slate-100">Profile & Settings</h1>
+        <p className="text-slate-400 mt-1 font-light">Manage your strategic identity and personal preferences.</p>
       </header>
 
       <form onSubmit={handleSave} className="space-y-8">
@@ -108,7 +108,7 @@ const Profile: React.FC<ProfileProps> = ({ currentUser, themes, onUpdateUser }) 
           <div className="p-8">
             <div className="flex flex-col md:flex-row gap-8">
               <div className="flex flex-col items-center space-y-4">
-                <div 
+                <div
                   onClick={() => fileInputRef.current?.click()}
                   className="w-32 h-32 rounded-full border-4 border-slate-100 shadow-inner bg-slate-50 flex items-center justify-center cursor-pointer overflow-hidden group relative"
                 >
@@ -127,24 +127,24 @@ const Profile: React.FC<ProfileProps> = ({ currentUser, themes, onUpdateUser }) 
 
               <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">First Name</label>
-                  <input required type="text" value={formData.firstName} onChange={e => setFormData({...formData, firstName: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-medium" />
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">First Name</label>
+                  <input required type="text" value={formData.firstName} onChange={e => setFormData({ ...formData, firstName: e.target.value })} className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-sm text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none font-medium" />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Last Name</label>
-                  <input required type="text" value={formData.lastName} onChange={e => setFormData({...formData, lastName: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-medium" />
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Last Name</label>
+                  <input required type="text" value={formData.lastName} onChange={e => setFormData({ ...formData, lastName: e.target.value })} className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-sm text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none font-medium" />
                 </div>
                 <div className="space-y-1.5 md:col-span-2">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Professional Title</label>
-                  <input required type="text" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-medium" />
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Professional Title</label>
+                  <input required type="text" value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-sm text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none font-medium" />
                 </div>
                 <div className="space-y-1.5 md:col-span-2">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Professional Bio</label>
-                  <textarea 
-                    value={formData.bio || ''} 
-                    onChange={e => setFormData({...formData, bio: e.target.value})} 
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Professional Bio</label>
+                  <textarea
+                    value={formData.bio || ''}
+                    onChange={e => setFormData({ ...formData, bio: e.target.value })}
                     placeholder="Briefly describe your strategic focus..."
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-light leading-relaxed h-24 resize-none"
+                    className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-sm text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none font-light leading-relaxed h-24 resize-none placeholder:text-slate-400"
                   />
                 </div>
               </div>
@@ -160,22 +160,22 @@ const Profile: React.FC<ProfileProps> = ({ currentUser, themes, onUpdateUser }) 
           <div className="p-8 space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-6 border-b border-slate-100">
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Assigned Pillar (Primary Focus)</label>
-                <select 
-                  value={formData.ownedThemeId || ''} 
-                  onChange={e => setFormData({...formData, ownedThemeId: e.target.value})}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-bold text-slate-700"
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Assigned Pillar (Primary Focus)</label>
+                <select
+                  value={formData.ownedThemeId || ''}
+                  onChange={e => setFormData({ ...formData, ownedThemeId: e.target.value })}
+                  className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-bold text-slate-900"
                 >
                   <option value="">Global / Unassigned</option>
                   {themes.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                 </select>
               </div>
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Ownership Level</label>
-                <select 
-                  value={formData.ownershipType || 'Supporting'} 
-                  onChange={e => setFormData({...formData, ownershipType: e.target.value as OwnershipType})}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-bold text-slate-700"
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Ownership Level</label>
+                <select
+                  value={formData.ownershipType || 'Supporting'}
+                  onChange={e => setFormData({ ...formData, ownershipType: e.target.value as OwnershipType })}
+                  className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-bold text-slate-900"
                 >
                   <option value="Owner">Primary Owner</option>
                   <option value="Supporting">Supporting Partner</option>
@@ -187,7 +187,7 @@ const Profile: React.FC<ProfileProps> = ({ currentUser, themes, onUpdateUser }) 
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Additional Support Pillars</h4>
-                <button 
+                <button
                   type="button"
                   onClick={addSupportingPillar}
                   className="text-[10px] font-bold text-blue-600 uppercase flex items-center gap-1.5 bg-blue-50 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-colors shadow-sm"
@@ -199,31 +199,31 @@ const Profile: React.FC<ProfileProps> = ({ currentUser, themes, onUpdateUser }) 
 
               <div className="space-y-3">
                 {(formData.supportingPillars || []).map((support, idx) => (
-                  <div key={idx} className="flex flex-col md:flex-row gap-4 items-end bg-slate-50 p-4 rounded-xl border border-slate-100 animate-in slide-in-from-top-1 duration-200">
+                  <div key={idx} className="flex flex-col md:flex-row gap-4 items-end bg-slate-50 p-4 rounded-xl border border-slate-200 animate-in slide-in-from-top-1 duration-200">
                     <div className="flex-1 space-y-1.5">
-                       <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Supporting Pillar</label>
-                       <select 
-                        value={support.themeId} 
+                      <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Supporting Pillar</label>
+                      <select
+                        value={support.themeId}
                         onChange={e => updateSupportingPillar(idx, { themeId: e.target.value })}
-                        className="w-full bg-white border border-slate-200 rounded-lg px-4 py-2.5 text-xs font-bold focus:ring-2 focus:ring-blue-500 outline-none"
+                        className="w-full bg-white border border-slate-300 rounded-lg px-4 py-2.5 text-xs font-bold text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none"
                       >
                         <option value="">Select Pillar...</option>
                         {themes.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                       </select>
                     </div>
                     <div className="flex-1 space-y-1.5">
-                       <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Level</label>
-                       <select 
-                        value={support.type} 
+                      <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Level</label>
+                      <select
+                        value={support.type}
                         onChange={e => updateSupportingPillar(idx, { type: e.target.value as OwnershipType })}
-                        className="w-full bg-white border border-slate-200 rounded-lg px-4 py-2.5 text-xs font-bold focus:ring-2 focus:ring-blue-500 outline-none"
+                        className="w-full bg-white border border-slate-300 rounded-lg px-4 py-2.5 text-xs font-bold text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none"
                       >
                         <option value="Supporting">Supporting</option>
                         <option value="Owner">Co-Owner</option>
                       </select>
                     </div>
-                    <button 
-                      type="button" 
+                    <button
+                      type="button"
                       onClick={() => removeSupportingPillar(idx)}
                       className="p-2.5 text-slate-300 hover:text-rose-500 transition-colors"
                     >
@@ -248,11 +248,11 @@ const Profile: React.FC<ProfileProps> = ({ currentUser, themes, onUpdateUser }) 
           </div>
           <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Local Timezone</label>
-              <select 
-                value={formData.timezone || 'UTC'} 
-                onChange={e => setFormData({...formData, timezone: e.target.value})}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-medium"
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Local Timezone</label>
+              <select
+                value={formData.timezone || 'UTC'}
+                onChange={e => setFormData({ ...formData, timezone: e.target.value })}
+                className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-sm text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none font-medium"
               >
                 <option value="America/New_York">Eastern Time (US & Canada)</option>
                 <option value="America/Chicago">Central Time (US & Canada)</option>
@@ -265,15 +265,15 @@ const Profile: React.FC<ProfileProps> = ({ currentUser, themes, onUpdateUser }) 
               </select>
             </div>
             <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">LinkedIn Profile</label>
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">LinkedIn Profile</label>
               <div className="relative">
                 <i className="fab fa-linkedin absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                <input 
-                  type="url" 
-                  value={formData.linkedinUrl || ''} 
-                  onChange={e => setFormData({...formData, linkedinUrl: e.target.value})} 
+                <input
+                  type="url"
+                  value={formData.linkedinUrl || ''}
+                  onChange={e => setFormData({ ...formData, linkedinUrl: e.target.value })}
                   placeholder="https://linkedin.com/in/..."
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-11 pr-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-medium" 
+                  className="w-full bg-white border border-slate-300 rounded-xl pl-11 pr-4 py-3 text-sm text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none font-medium placeholder:text-slate-400"
                 />
               </div>
             </div>
@@ -281,8 +281,8 @@ const Profile: React.FC<ProfileProps> = ({ currentUser, themes, onUpdateUser }) 
         </section>
 
         <div className="flex justify-end">
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             disabled={isSaving}
             className="px-10 py-4 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 shadow-xl shadow-blue-900/20 transition-all active:scale-95 disabled:opacity-50 flex items-center gap-3"
           >
@@ -305,7 +305,7 @@ const Profile: React.FC<ProfileProps> = ({ currentUser, themes, onUpdateUser }) 
               Account deletion is permanent. All your strategic ownership data will be removed.
             </p>
           </div>
-          <button 
+          <button
             onClick={() => setShowDeleteModal(true)}
             className="px-6 py-3 bg-white border-2 border-rose-200 text-rose-600 font-bold rounded-xl hover:bg-rose-600 hover:text-white hover:border-rose-600 transition-all"
           >
@@ -331,26 +331,26 @@ const Profile: React.FC<ProfileProps> = ({ currentUser, themes, onUpdateUser }) 
               <p className="text-sm text-slate-600 leading-relaxed font-light">
                 This action <strong className="text-slate-900">cannot be undone</strong>. To confirm, please type <span className="font-mono bg-rose-100 px-1.5 py-0.5 rounded text-rose-700 font-bold">delete</span> in the field below.
               </p>
-              
+
               <div className="space-y-1.5">
-                <input 
+                <input
                   autoFocus
-                  type="text" 
+                  type="text"
                   value={deleteConfirmText}
                   onChange={e => setDeleteConfirmText(e.target.value)}
                   placeholder="Type 'delete' to confirm"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-rose-500 outline-none font-bold text-rose-700 placeholder:font-normal placeholder:text-slate-300"
+                  className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-sm text-slate-900 focus:ring-2 focus:ring-rose-500 outline-none font-bold placeholder:text-slate-400 placeholder:font-normal"
                 />
               </div>
 
               <div className="flex gap-3">
-                <button 
+                <button
                   onClick={() => setShowDeleteModal(false)}
                   className="flex-1 py-3 border border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-50 transition-colors"
                 >
                   Cancel
                 </button>
-                <button 
+                <button
                   onClick={handleDeleteAccount}
                   disabled={deleteConfirmText.toLowerCase() !== 'delete' || isDeleting}
                   className="flex-1 py-3 bg-rose-600 text-white font-bold rounded-xl hover:bg-rose-700 shadow-lg shadow-rose-900/20 transition-all active:scale-95 disabled:opacity-20 disabled:grayscale"

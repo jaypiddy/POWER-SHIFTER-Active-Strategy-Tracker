@@ -1,6 +1,8 @@
 
 import React, { useState } from 'react';
 import { Outcome1Y, Theme, User, Measure } from '../types';
+import GenericFilterBar from './GenericFilterBar';
+import { StrategyNode } from './StrategyNode';
 
 interface OutcomesProps {
   outcomes: Outcome1Y[];
@@ -13,12 +15,16 @@ interface OutcomesProps {
 }
 
 const Outcomes: React.FC<OutcomesProps> = ({ outcomes, measures, users, themes, currentUser, onSelectOutcome, onNewOutcome }) => {
+  const [search, setSearch] = useState('');
   const [filterTheme, setFilterTheme] = useState('all');
   const [filterUser, setFilterUser] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('all');
 
   const filteredOutcomes = outcomes.filter(o =>
     (filterTheme === 'all' || o.theme_id === filterTheme) &&
-    (filterUser === 'all' || o.owner_user_ids.includes(filterUser))
+    (filterUser === 'all' || o.owner_user_ids.includes(filterUser)) &&
+    (filterStatus === 'all' || o.status === filterStatus) &&
+    (search === '' || o.title.toLowerCase().includes(search.toLowerCase()))
   );
 
   const getHealthCount = (status: string) => outcomes.filter(o => o.status === status).length;
@@ -59,69 +65,25 @@ const Outcomes: React.FC<OutcomesProps> = ({ outcomes, measures, users, themes, 
       </header>
 
       {/* Filter Control Bar */}
-      <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800 shadow-sm space-y-6">
-        {/* Theme Filters */}
-        <div className="space-y-3">
-          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Filter by Theme</label>
-          <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
-            <button
-              onClick={() => setFilterTheme('all')}
-              className={`px-5 py-2.5 rounded-xl text-xs font-bold border transition-all whitespace-nowrap outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${filterTheme === 'all'
-                  ? 'bg-slate-800 text-white border-slate-700 shadow-lg shadow-black/20'
-                  : 'bg-slate-950 text-slate-400 border-slate-800 hover:border-slate-700 hover:text-slate-200'
-                }`}
-            >
-              All Strategic Themes
-            </button>
-            {themes.map(theme => (
-              <button
-                key={theme.id}
-                onClick={() => setFilterTheme(theme.id)}
-                className={`px-5 py-2.5 rounded-xl text-xs font-bold border transition-all whitespace-nowrap flex items-center gap-2 ${filterTheme === theme.id
-                    ? `bg-${theme.color}-600 text-white border-${theme.color}-600 shadow-lg shadow-${theme.color}-900/20`
-                    : 'bg-slate-950 text-slate-400 border-slate-800 hover:border-slate-700 hover:text-slate-200'
-                  }`}
-              >
-                <span className={`w-2 h-2 rounded-full ${filterTheme === theme.id ? 'bg-white' : `bg-${theme.color}-500`}`}></span>
-                {theme.name}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* User Filters */}
-        <div className="space-y-3">
-          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Filter by Owner</label>
-          <div className="flex gap-3 overflow-x-auto no-scrollbar pb-1">
-            <button
-              onClick={() => setFilterUser('all')}
-              className={`px-5 py-2.5 rounded-xl text-xs font-bold border transition-all whitespace-nowrap outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${filterUser === 'all'
-                  ? 'bg-slate-800 text-white border-slate-700 shadow-lg shadow-black/20'
-                  : 'bg-slate-950 text-slate-400 border-slate-800 hover:border-slate-700 hover:text-slate-200'
-                }`}
-            >
-              Everyone
-            </button>
-            {outcomeOwners.map(user => (
-              <button
-                key={user.id}
-                onClick={() => setFilterUser(user.id)}
-                className={`group px-4 py-2 rounded-xl text-xs font-bold border transition-all whitespace-nowrap flex items-center gap-3 outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${filterUser === user.id
-                    ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-900/20'
-                    : 'bg-slate-950 text-slate-400 border-slate-800 hover:border-slate-700 hover:text-slate-200'
-                  }`}
-              >
-                <img
-                  src={user.avatar}
-                  className={`w-6 h-6 rounded-full border-2 ${filterUser === user.id ? 'border-blue-400' : 'border-slate-700'} transition-colors`}
-                  alt=""
-                />
-                <span>{user.firstName} {user.lastName}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
+      <GenericFilterBar
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search outcomes..."
+        themes={themes}
+        selectedTheme={filterTheme}
+        onThemeChange={setFilterTheme}
+        users={outcomeOwners}
+        selectedUser={filterUser}
+        onUserChange={setFilterUser}
+        statusOptions={[
+          { label: 'Green', value: 'Green' },
+          { label: 'Yellow', value: 'Yellow' },
+          { label: 'Red', value: 'Red' }
+        ]}
+        selectedStatus={filterStatus}
+        onStatusChange={setFilterStatus}
+        statusLabel="All Statuses"
+      />
 
       {/* Grouped View */}
       <div className="space-y-12">
@@ -151,8 +113,8 @@ const Outcomes: React.FC<OutcomesProps> = ({ outcomes, measures, users, themes, 
                       <div className="p-10 flex-1 space-y-6">
                         <div className="flex justify-between items-center">
                           <div className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest ${outcome.status === 'Green' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
-                              outcome.status === 'Yellow' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' :
-                                'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                            outcome.status === 'Yellow' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' :
+                              'bg-rose-500/10 text-rose-400 border border-rose-500/20'
                             }`}>
                             {outcome.status}
                           </div>
@@ -171,16 +133,19 @@ const Outcomes: React.FC<OutcomesProps> = ({ outcomes, measures, users, themes, 
                         <div className="pt-6 border-t border-slate-800">
                           <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4">Strategic Measures ({outcomeMeasures.length})</p>
                           {outcomeMeasures.length > 0 ? (
-                            <div className="space-y-3">
-                              {outcomeMeasures.slice(0, 2).map(m => (
-                                <div key={m.id} className="flex justify-between items-center bg-slate-950/50 px-4 py-2.5 rounded-xl border border-slate-800">
-                                  <span className="text-xs font-bold text-slate-300 truncate">{m.name}</span>
-                                  <span className="text-xs font-bold text-blue-400">{m.target}</span>
-                                </div>
+                            <div className="space-y-4">
+                              {outcomeMeasures.map(m => (
+                                <StrategyNode
+                                  key={m.id}
+                                  item={m}
+                                  type="measure"
+                                  isActive={false}
+                                  isDimmed={false}
+                                  themeColor={undefined}
+                                  users={users}
+                                  className="!mb-0 shadow-sm hover:shadow-md" // Override default margin and shadow
+                                />
                               ))}
-                              {outcomeMeasures.length > 2 && (
-                                <p className="text-[10px] text-slate-500 font-medium text-center">+ {outcomeMeasures.length - 2} more measures</p>
-                              )}
                             </div>
                           ) : (
                             <p className="text-xs text-slate-600 italic font-light">No measures defined.</p>

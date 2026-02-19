@@ -232,10 +232,10 @@ const Auth: React.FC = () => {
                 </div>
               )}
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Email Address</label>
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Email Address</label>
                 <div className="relative">
                   <i className="far fa-envelope absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                  <input required type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-11 pr-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-medium" />
+                  <input required type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-white border border-slate-300 rounded-xl pl-11 pr-4 py-3 text-sm text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none font-medium" />
                 </div>
               </div>
               <button
@@ -336,32 +336,32 @@ const Auth: React.FC = () => {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">First Name</label>
-                      <input required type="text" value={firstName} onChange={e => setFirstName(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-medium" />
+                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">First Name</label>
+                      <input required type="text" value={firstName} onChange={e => setFirstName(e.target.value)} className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-sm text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none font-medium" />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Last Name</label>
-                      <input required type="text" value={lastName} onChange={e => setLastName(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-medium" />
+                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Last Name</label>
+                      <input required type="text" value={lastName} onChange={e => setLastName(e.target.value)} className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-sm text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none font-medium" />
                     </div>
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Professional Title</label>
-                    <input required type="text" value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Chief Strategy Officer" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-medium" />
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Professional Title</label>
+                    <input required type="text" value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Chief Strategy Officer" className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-sm text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none font-medium" />
                   </div>
                 </div>
               )}
 
               <div className="space-y-4">
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Email Address</label>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Email Address</label>
                   <div className="relative">
                     <i className="far fa-envelope absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                    <input required type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-11 pr-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-medium" />
+                    <input required type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-white border border-slate-300 rounded-xl pl-11 pr-4 py-3 text-sm text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none font-medium" />
                   </div>
                 </div>
                 <div className="space-y-1.5">
                   <div className="flex justify-between items-center ml-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Password</label>
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Password</label>
                     {!isRegistering && (
                       <button
                         type="button"
@@ -374,7 +374,7 @@ const Auth: React.FC = () => {
                   </div>
                   <div className="relative">
                     <i className="fas fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                    <input required type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-11 pr-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-medium" />
+                    <input required type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full bg-white border border-slate-300 rounded-xl pl-11 pr-4 py-3 text-sm text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none font-medium" />
                   </div>
                 </div>
               </div>
