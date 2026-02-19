@@ -54,7 +54,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentUser, onSwitchRole }) 
       {/* Mobile Header */}
       <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-slate-950/90 backdrop-blur-xl border-b border-slate-800 flex items-center justify-between px-4 z-50">
         <div className="flex items-center gap-3">
-          <img src="/ps-wordmark.png" alt="Power Shifter" className="h-6 w-auto object-contain" />
+          <img src="/PS Logo.svg" alt="Power Shifter" className="h-8 w-auto object-contain" />
         </div>
         <button
           onClick={toggleMobileMenu}
@@ -83,10 +83,10 @@ const Layout: React.FC<LayoutProps> = ({ children, currentUser, onSwitchRole }) 
         <div className={`p-6 border-b border-slate-800 hidden md:flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} overflow-x-hidden h-20`}>
           {isCollapsed ? (
             <div className="w-8 h-8 flex items-center justify-center shrink-0">
-              <img src="/PS-Logo-TheShiftyShift-2021-RGB-Blue.png" alt="PS" className="w-full h-full object-contain" />
+              <img src="/PS-Logo-TheShiftyShift-2021-RGB-Blue.svg" alt="PS" className="w-full h-full object-contain" />
             </div>
           ) : (
-            <img src="/ps-wordmark.png" alt="Power Shifter" className="h-6 w-auto object-contain" />
+            <img src="/PS Logo.svg" alt="Power Shifter" className="h-8 w-auto object-contain" />
           )}
         </div>
 

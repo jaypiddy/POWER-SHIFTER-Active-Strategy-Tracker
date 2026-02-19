@@ -20,6 +20,7 @@ service cloud.firestore {
     match /comments/{document=**} { allow read, write: if isSignedIn(); }
     match /sessions/{document=**} { allow read, write: if isSignedIn(); }
     match /snapshots/{document=**} { allow read, write: if isSignedIn(); }
+    match /activity_logs/{document=**} { allow read, write: if isSignedIn(); }
     
     // Canvas: Singleton document
     match /canvas/{document=**} { allow read, write: if isSignedIn(); }

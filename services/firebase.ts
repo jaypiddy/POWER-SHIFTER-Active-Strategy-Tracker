@@ -6,13 +6,13 @@ import { getFirestore } from "firebase/firestore";
 import { getAnalytics, isSupported } from "firebase/analytics";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDmirfBt2gmvX800XZ1e4uzvvMrTxIzwL0",
-  authDomain: "ps-active-strategy-app-2026.firebaseapp.com",
-  projectId: "ps-active-strategy-app-2026",
-  storageBucket: "ps-active-strategy-app-2026.firebasestorage.app",
-  messagingSenderId: "704359993958",
-  appId: "1:704359993958:web:f56dbc47802b4fb03b53a7",
-  measurementId: "G-JZJ1W6YBL9"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
 // Initialize Firebase App only once

@@ -3,7 +3,7 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { Bet, Comment, User, Outcome1Y, Theme, Canvas } from "../types";
 
 // Always use named parameter for apiKey and use process.env.API_KEY directly
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
 
 const ACTIVE_STRATEGY_FRAMEWORK = `
 Active Strategy Framework: System Architecture & Knowledge Base
