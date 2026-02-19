@@ -104,7 +104,7 @@ const OutcomeDetail: React.FC<OutcomeDetailProps> = ({ outcome, measures, curren
       <div className="w-full max-w-2xl bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
         <header className="p-6 border-b border-slate-100 flex justify-between items-center bg-white z-20">
           <div className="flex items-center gap-4">
-            <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-lg text-slate-500 transition-colors">
+            <button onClick={onClose} aria-label="Close" className="p-2 hover:bg-slate-100 rounded-lg text-slate-400 transition-colors">
               <i className="fas fa-times"></i>
             </button>
             <div>

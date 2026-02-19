@@ -42,9 +42,9 @@ const OutcomeCreate: React.FC<OutcomeCreateProps> = ({ onClose, onCreate, curren
         <header className={`px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-${selectedTheme?.color || 'slate'}-50/50`}>
           <div>
             <h2 className="text-xl font-bold text-slate-900 uppercase tracking-tight">Define Strategic Outcome</h2>
-            <p className="text-sm text-slate-500 font-light mt-0.5">Set a measurable goal for your strategic pillar.</p>
+            <p className="text-sm text-slate-400 font-light mt-0.5">Set a measurable goal for your strategic pillar.</p>
           </div>
-          <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 transition-colors">
+          <button aria-label="Close" className="p-2 text-slate-400 hover:text-slate-600 transition-colors">
             <i className="fas fa-times text-lg"></i>
           </button>
         </header>
@@ -52,7 +52,7 @@ const OutcomeCreate: React.FC<OutcomeCreateProps> = ({ onClose, onCreate, curren
         <form onSubmit={handleSubmit} className="p-8 space-y-6 overflow-y-auto max-h-[75vh] no-scrollbar">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="md:col-span-2">
-              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Outcome Title</label>
+              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Outcome Title</label>
               <input
                 required
                 autoFocus
@@ -65,7 +65,7 @@ const OutcomeCreate: React.FC<OutcomeCreateProps> = ({ onClose, onCreate, curren
             </div>
 
             <div>
-              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Strategic Pillar (Theme)</label>
+              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Strategic Pillar (Theme)</label>
               <select
                 className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-sm text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none font-medium"
                 value={formData.theme_id}
@@ -76,7 +76,7 @@ const OutcomeCreate: React.FC<OutcomeCreateProps> = ({ onClose, onCreate, curren
             </div>
 
             <div>
-              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Primary Owner</label>
+              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Primary Owner</label>
               <select
                 className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-sm text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none font-medium"
                 value={formData.owner_id}
@@ -89,7 +89,7 @@ const OutcomeCreate: React.FC<OutcomeCreateProps> = ({ onClose, onCreate, curren
 
           <div className="grid grid-cols-1 gap-6 p-4 bg-slate-50 rounded-xl border border-slate-200">
             <div>
-              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Target Year / Horizon</label>
+              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Target Year / Horizon</label>
               <input
                 type="text"
                 required

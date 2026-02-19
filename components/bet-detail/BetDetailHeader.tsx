@@ -16,10 +16,11 @@ export const BetDetailHeader: React.FC = () => {
 
     return (
         <>
-            <header className="px-8 pt-8 pb-0 bg-white relative">
+            <header className="px-8 pt-8 pb-0 bg-slate-900 relative">
                 <button
                     onClick={onClose}
-                    className="absolute left-2 top-8 p-2 text-slate-400 hover:text-slate-600 transition-colors"
+                    aria-label="Close"
+                    className="absolute left-2 top-8 p-2 text-slate-400 hover:text-slate-300 transition-colors"
                 >
                     <i className="fas fa-times text-xl"></i>
                 </button>
@@ -27,10 +28,10 @@ export const BetDetailHeader: React.FC = () => {
                 <div className="flex justify-between items-start pl-8">
                     <div className="space-y-3">
                         <div className="flex items-center gap-2">
-                            <span className={`px-2 py-1 rounded bg-${theme?.color || 'blue'}-50 text-${theme?.color || 'blue'}-600 text-[10px] font-bold uppercase tracking-widest`}>
+                            <span className={`px-2 py-1 rounded bg-${theme?.color || 'blue'}-900/40 text-${theme?.color || 'blue'}-400 text-[10px] font-bold uppercase tracking-widest border border-${theme?.color || 'blue'}-800/50`}>
                                 {theme?.name || 'Theme'}
                             </span>
-                            <span className="text-slate-300">•</span>
+                            <span className="text-slate-600">•</span>
                             <span className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">
                                 {bet.bet_type}
                             </span>
@@ -50,7 +51,7 @@ export const BetDetailHeader: React.FC = () => {
                                     e.currentTarget.blur();
                                 }
                             }}
-                            className="text-3xl font-bold text-slate-900 leading-tight w-full bg-transparent outline-none border-b-2 border-transparent focus:border-blue-500 transition-colors placeholder:text-slate-400"
+                            className="text-3xl font-bold text-white leading-tight w-full bg-transparent outline-none border-b-2 border-transparent focus:border-blue-500 transition-colors placeholder:text-slate-600"
                             placeholder="Enter bet title..."
                         />
                     </div>
@@ -61,16 +62,16 @@ export const BetDetailHeader: React.FC = () => {
                                 {!isArchived && (
                                     <button
                                         onClick={() => onArchive(bet)}
-                                        className="p-3 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-xl transition-all"
-                                        title="Archive Bet"
+                                        className="p-3 text-slate-400 hover:text-amber-400 hover:bg-amber-950/30 rounded-xl transition-all"
+                                        aria-label="Archive Bet"
                                     >
                                         <i className="fas fa-box-archive"></i>
                                     </button>
                                 )}
                                 <button
                                     onClick={() => setShowDeleteConfirm(true)}
-                                    className="p-3 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
-                                    title="Delete Permanently"
+                                    className="p-3 text-slate-400 hover:text-rose-400 hover:bg-rose-950/30 rounded-xl transition-all"
+                                    aria-label="Delete Permanently"
                                 >
                                     <i className="fas fa-trash-alt"></i>
                                 </button>
@@ -83,8 +84,8 @@ export const BetDetailHeader: React.FC = () => {
                                 setTimeout(() => setShowSaved(false), 2000);
                             }}
                             className={`px-6 py-3 font-bold rounded-xl shadow-lg transition-all active:scale-95 flex items-center gap-2 ${showSaved
-                                ? 'bg-emerald-500 text-white shadow-emerald-900/20'
-                                : 'bg-blue-600 text-white hover:bg-blue-700 shadow-blue-900/20'
+                                ? 'bg-emerald-600 text-white shadow-emerald-900/20'
+                                : 'bg-blue-600 text-white hover:bg-blue-500 shadow-blue-900/20'
                                 }`}
                         >
                             {showSaved ? (
@@ -93,7 +94,7 @@ export const BetDetailHeader: React.FC = () => {
                                     Saved!
                                 </>
                             ) : (
-                                'Save Bet Details'
+                                'Save Details'
                             )}
                         </button>
                     </div>

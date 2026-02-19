@@ -2,39 +2,39 @@
 import { User, Canvas, Outcome1Y, Bet, RhythmSession, Comment, Measure } from './types';
 
 export const USERS: User[] = [
-  { 
-    id: 'u1', 
-    firstName: 'Alex', 
-    lastName: 'Strategist', 
-    email: 'alex@powershifter.com', 
-    role: 'Admin', 
+  {
+    id: 'u1',
+    firstName: 'Alex',
+    lastName: 'Strategist',
+    email: 'alex@powershifter.com',
+    role: 'Admin',
     title: 'Chief Strategy Officer',
     ownedThemeId: 't1',
     ownershipType: 'Owner',
-    active: true, 
-    avatar: 'https://i.pravatar.cc/150?u=u1' 
+    active: true,
+    avatar: 'https://i.pravatar.cc/150?u=u1'
   },
-  { 
-    id: 'u2', 
-    firstName: 'Jordan', 
-    lastName: 'Lead', 
-    email: 'jordan@powershifter.com', 
-    role: 'Editor', 
+  {
+    id: 'u2',
+    firstName: 'Jordan',
+    lastName: 'Lead',
+    email: 'jordan@powershifter.com',
+    role: 'Editor',
     title: 'Director of Product',
     ownedThemeId: 't2',
     ownershipType: 'Owner',
-    active: true, 
-    avatar: 'https://i.pravatar.cc/150?u=u2' 
+    active: true,
+    avatar: 'https://i.pravatar.cc/150?u=u2'
   },
-  { 
-    id: 'u3', 
-    firstName: 'Casey', 
-    lastName: 'Observer', 
-    email: 'casey@powershifter.com', 
-    role: 'Viewer', 
+  {
+    id: 'u3',
+    firstName: 'Casey',
+    lastName: 'Observer',
+    email: 'casey@powershifter.com',
+    role: 'Viewer',
     title: 'Analyst',
-    active: true, 
-    avatar: 'https://i.pravatar.cc/150?u=u3' 
+    active: true,
+    avatar: 'https://i.pravatar.cc/150?u=u3'
   },
 ];
 
@@ -124,11 +124,11 @@ export const INITIAL_BETS: Bet[] = [
     progress: 75,
     actions: [
       // Fix: Added missing bet_id for task association
-      { id: 'a1', bet_id: 'b1', title: 'Finalize API specs for Gemini integration', tshirt_size: 'S', progress: 100, start_date: '2024-01-20', due_date: '2024-02-15' },
+      { id: 'a1', bet_id: 'b1', title: 'Finalize API specs for Gemini integration', tshirt_size: 'S', progress: 100, start_date: '2024-01-20', due_date: '2024-02-15', owner_id: 'u1' },
       // Fix: Added missing bet_id for task association
-      { id: 'a2', bet_id: 'b1', title: 'Deploy alpha version to testing environment', tshirt_size: 'M', progress: 75, start_date: '2024-03-01', due_date: '2024-05-20' },
+      { id: 'a2', bet_id: 'b1', title: 'Deploy alpha version to testing environment', tshirt_size: 'M', progress: 75, start_date: '2024-03-01', due_date: '2024-05-20', owner_id: 'u2' },
       // Fix: Added missing bet_id for task association
-      { id: 'a3', bet_id: 'b1', title: 'User feedback session (Internal Group)', tshirt_size: 'M', progress: 50, start_date: '2024-05-10', due_date: '2024-06-05' }
+      { id: 'a3', bet_id: 'b1', title: 'User feedback session (Internal Group)', tshirt_size: 'M', progress: 50, start_date: '2024-05-10', due_date: '2024-06-05', owner_id: 'u3' }
     ],
     owner_user_ids: ['u1'],
     stakeholder_user_ids: ['u2'],
@@ -155,9 +155,9 @@ export const INITIAL_BETS: Bet[] = [
     progress: 0,
     actions: [
       // Fix: Added missing bet_id for task association
-      { id: 'a4', bet_id: 'b2', title: 'Audit legacy CSV structures', tshirt_size: 'L', progress: 0, start_date: '2024-02-10', due_date: '2024-03-15' },
+      { id: 'a4', bet_id: 'b2', title: 'Audit legacy CSV structures', tshirt_size: 'L', progress: 0, start_date: '2024-02-10', due_date: '2024-03-15', owner_id: 'u2' },
       // Fix: Added missing bet_id for task association
-      { id: 'a5', bet_id: 'b2', title: 'Draft unified schema documentation', tshirt_size: 'M', progress: 0, start_date: '2024-03-20', due_date: '2024-04-30' }
+      { id: 'a5', bet_id: 'b2', title: 'Draft unified schema documentation', tshirt_size: 'M', progress: 0, start_date: '2024-03-20', due_date: '2024-04-30', owner_id: 'u1' }
     ],
     owner_user_ids: ['u2'],
     stakeholder_user_ids: ['u1'],

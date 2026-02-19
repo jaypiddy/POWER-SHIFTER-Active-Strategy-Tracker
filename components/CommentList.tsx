@@ -61,14 +61,14 @@ const CommentList: React.FC<CommentListProps> = ({
 
   return (
     <div className="space-y-6">
-      <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+      <h3 className="text-lg font-bold text-white flex items-center gap-2">
         <i className="fas fa-comments text-slate-400"></i>
         Discussion ({filteredComments.length})
       </h3>
 
       {/* Input */}
       <div className="flex gap-4">
-        <div className="w-10 h-10 rounded-full bg-slate-200 shrink-0 overflow-hidden">
+        <div className="w-10 h-10 rounded-full bg-slate-700 shrink-0 overflow-hidden">
           <img src={currentUser.avatar} alt={`${currentUser.firstName} ${currentUser.lastName}`} />
         </div>
         <form onSubmit={handleSubmit} className="flex-1">
@@ -77,13 +77,13 @@ const CommentList: React.FC<CommentListProps> = ({
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
               placeholder="Add a comment or observation..."
-              className="w-full bg-white border border-slate-300 rounded-xl p-4 text-sm text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none transition-all resize-none min-h-[100px]"
+              className="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-sm text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all resize-none min-h-[100px] placeholder:text-slate-600"
             />
             <div className="flex justify-end mt-2">
               <button
                 type="submit"
                 disabled={!newComment.trim()}
-                className="px-6 py-2 bg-blue-600 text-white text-sm font-bold rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                className="px-6 py-2 bg-blue-600 text-white text-sm font-bold rounded-lg hover:bg-blue-500 disabled:opacity-50 transition-colors shadow-lg shadow-blue-900/20"
               >
                 Post Comment
               </button>
@@ -100,13 +100,13 @@ const CommentList: React.FC<CommentListProps> = ({
 
           return (
             <div key={comment.id} className="flex gap-4 group">
-              <div className="w-10 h-10 rounded-full bg-slate-100 shrink-0 overflow-hidden ring-2 ring-white">
+              <div className="w-10 h-10 rounded-full bg-slate-800 shrink-0 overflow-hidden ring-2 ring-slate-900 border border-slate-700">
                 <img src={comment.author_avatar} alt={comment.author_name} />
               </div>
               <div className="flex-1">
-                <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 transition-colors group-hover:bg-white group-hover:border-slate-200 relative">
+                <div className="bg-slate-900 rounded-2xl p-4 border border-slate-800 transition-colors group-hover:border-slate-700 relative">
                   <div className="flex justify-between items-center mb-1">
-                    <span className="text-sm font-bold text-slate-900">{comment.author_name}</span>
+                    <span className="text-sm font-bold text-slate-200">{comment.author_name}</span>
                     <div className="flex items-center gap-3">
                       <span className="text-[10px] font-bold text-slate-400 uppercase">
                         {new Date(comment.created_at).toLocaleDateString()}
@@ -114,15 +114,15 @@ const CommentList: React.FC<CommentListProps> = ({
                       {isAuthor && !isEditing && (
                         <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button
-                            onClick={() => startEdit(comment)}
-                            className="text-slate-400 hover:text-blue-500 transition-colors"
+                            aria-label="Edit Comment"
+                            className="text-slate-400 hover:text-blue-400 transition-colors"
                             title="Edit"
                           >
                             <i className="fas fa-pencil-alt text-xs"></i>
                           </button>
                           <button
-                            onClick={() => setDeletingCommentId(comment.id)}
-                            className="text-slate-400 hover:text-rose-500 transition-colors"
+                            aria-label="Delete Comment"
+                            className="text-slate-400 hover:text-rose-400 transition-colors"
                             title="Delete"
                           >
                             <i className="fas fa-trash-alt text-xs"></i>
@@ -137,27 +137,27 @@ const CommentList: React.FC<CommentListProps> = ({
                       <textarea
                         value={editBody}
                         onChange={(e) => setEditBody(e.target.value)}
-                        className="w-full bg-white border border-blue-300 rounded-lg p-3 text-sm text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none resize-none min-h-[80px]"
+                        className="w-full bg-slate-950 border border-blue-900/50 rounded-lg p-3 text-sm text-white focus:ring-2 focus:ring-blue-500 outline-none resize-none min-h-[80px]"
                         autoFocus
                       />
                       <div className="flex gap-2 mt-2 justify-end">
                         <button
                           onClick={() => setEditingCommentId(null)}
-                          className="px-3 py-1.5 text-xs font-bold text-slate-500 hover:bg-slate-100 rounded-lg transition-colors"
+                          className="px-3 py-1.5 text-xs font-bold text-slate-400 hover:bg-slate-800 rounded-lg transition-colors"
                         >
                           Cancel
                         </button>
                         <button
                           onClick={saveEdit}
                           disabled={!editBody.trim()}
-                          className="px-3 py-1.5 text-xs font-bold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                          className="px-3 py-1.5 text-xs font-bold bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors disabled:opacity-50"
                         >
                           Save Changes
                         </button>
                       </div>
                     </div>
                   ) : (
-                    <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">{comment.body}</p>
+                    <p className="text-sm text-slate-400 leading-relaxed whitespace-pre-wrap">{comment.body}</p>
                   )}
                 </div>
               </div>
@@ -176,7 +176,7 @@ const CommentList: React.FC<CommentListProps> = ({
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
           <div className="w-full max-w-sm bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="p-6 text-center space-y-4">
-              <div className="w-12 h-12 bg-rose-500/10 rounded-full flex items-center justify-center mx-auto mb-2">
+              <div className="w-12 h-12 bg-rose-900/20 rounded-full flex items-center justify-center mx-auto mb-2 border border-rose-900/30">
                 <i className="fas fa-trash-alt text-rose-500 text-xl"></i>
               </div>
               <h3 className="text-lg font-bold text-white">Delete Comment?</h3>
@@ -188,13 +188,13 @@ const CommentList: React.FC<CommentListProps> = ({
               <div className="flex gap-3 pt-2">
                 <button
                   onClick={() => setDeletingCommentId(null)}
-                  className="flex-1 py-2.5 border border-slate-700 text-slate-300 font-bold rounded-xl hover:bg-slate-800 hover:text-white transition-colors text-sm"
+                  className="flex-1 py-2.5 border border-slate-700 text-slate-400 font-bold rounded-xl hover:bg-slate-800 hover:text-white transition-colors text-sm"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={confirmDelete}
-                  className="flex-1 py-2.5 bg-rose-600 text-white font-bold rounded-xl hover:bg-rose-700 transition-colors text-sm shadow-lg shadow-rose-900/20"
+                  className="flex-1 py-2.5 bg-rose-600 text-white font-bold rounded-xl hover:bg-rose-500 transition-colors text-sm shadow-lg shadow-rose-900/20"
                 >
                   Delete
                 </button>

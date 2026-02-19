@@ -18,6 +18,15 @@ const Profile: React.FC<ProfileProps> = ({ currentUser, themes, onUpdateUser }) 
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Sync state with prop if currentUser changes externally
+  React.useEffect(() => {
+    setFormData(prev => ({
+      ...prev,
+      ...currentUser,
+      supportingPillars: currentUser.supportingPillars || []
+    }));
+  }, [currentUser]);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -101,42 +110,42 @@ const Profile: React.FC<ProfileProps> = ({ currentUser, themes, onUpdateUser }) 
 
       <form onSubmit={handleSave} className="space-y-8">
         {/* Personal Identity */}
-        <section className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-          <div className="px-8 py-4 border-b border-slate-100 bg-slate-50/50">
-            <h3 className="text-sm font-bold text-slate-800 uppercase tracking-widest">Personal Identity</h3>
+        <section className="bg-slate-900 rounded-2xl shadow-sm border border-slate-800 overflow-hidden">
+          <div className="px-8 py-4 border-b border-slate-800 bg-slate-950/50">
+            <h3 className="text-sm font-bold text-slate-200 uppercase tracking-widest">Personal Identity</h3>
           </div>
           <div className="p-8">
             <div className="flex flex-col md:flex-row gap-8">
               <div className="flex flex-col items-center space-y-4">
                 <div
                   onClick={() => fileInputRef.current?.click()}
-                  className="w-32 h-32 rounded-full border-4 border-slate-100 shadow-inner bg-slate-50 flex items-center justify-center cursor-pointer overflow-hidden group relative"
+                  className="w-32 h-32 rounded-full border-4 border-slate-800 shadow-inner bg-slate-950 flex items-center justify-center cursor-pointer overflow-hidden group relative"
                 >
                   {formData.avatar ? (
                     <img src={formData.avatar} alt="Avatar" className="w-full h-full object-cover transition-transform group-hover:scale-110" />
                   ) : (
-                    <i className="fas fa-user text-4xl text-slate-300"></i>
+                    <i className="fas fa-user text-4xl text-slate-700"></i>
                   )}
-                  <div className="absolute inset-0 bg-slate-900/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="absolute inset-0 bg-slate-900/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                     <i className="fas fa-camera text-white"></i>
                   </div>
                 </div>
                 <input type="file" ref={fileInputRef} onChange={handleAvatarChange} className="hidden" accept="image/*" />
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Profile Avatar</p>
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Profile Avatar</p>
               </div>
 
               <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">First Name</label>
-                  <input required type="text" value={formData.firstName} onChange={e => setFormData({ ...formData, firstName: e.target.value })} className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-sm text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none font-medium" />
+                  <input required type="text" value={formData.firstName} onChange={e => setFormData({ ...formData, firstName: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none font-medium placeholder-slate-600" />
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Last Name</label>
-                  <input required type="text" value={formData.lastName} onChange={e => setFormData({ ...formData, lastName: e.target.value })} className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-sm text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none font-medium" />
+                  <input required type="text" value={formData.lastName} onChange={e => setFormData({ ...formData, lastName: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none font-medium placeholder-slate-600" />
                 </div>
                 <div className="space-y-1.5 md:col-span-2">
                   <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Professional Title</label>
-                  <input required type="text" value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-sm text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none font-medium" />
+                  <input required type="text" value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none font-medium placeholder-slate-600" />
                 </div>
                 <div className="space-y-1.5 md:col-span-2">
                   <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Professional Bio</label>
@@ -144,7 +153,7 @@ const Profile: React.FC<ProfileProps> = ({ currentUser, themes, onUpdateUser }) 
                     value={formData.bio || ''}
                     onChange={e => setFormData({ ...formData, bio: e.target.value })}
                     placeholder="Briefly describe your strategic focus..."
-                    className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-sm text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none font-light leading-relaxed h-24 resize-none placeholder:text-slate-400"
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none font-light leading-relaxed h-24 resize-none placeholder:text-slate-600"
                   />
                 </div>
               </div>
@@ -153,18 +162,18 @@ const Profile: React.FC<ProfileProps> = ({ currentUser, themes, onUpdateUser }) 
         </section>
 
         {/* Strategic Alignment */}
-        <section className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-          <div className="px-8 py-4 border-b border-slate-100 bg-slate-50/50">
-            <h3 className="text-sm font-bold text-slate-800 uppercase tracking-widest">Strategic Alignment</h3>
+        <section className="bg-slate-900 rounded-2xl shadow-sm border border-slate-800 overflow-hidden">
+          <div className="px-8 py-4 border-b border-slate-800 bg-slate-950/50">
+            <h3 className="text-sm font-bold text-slate-200 uppercase tracking-widest">Strategic Alignment</h3>
           </div>
           <div className="p-8 space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-6 border-b border-slate-100">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-6 border-b border-slate-800">
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Assigned Pillar (Primary Focus)</label>
                 <select
                   value={formData.ownedThemeId || ''}
                   onChange={e => setFormData({ ...formData, ownedThemeId: e.target.value })}
-                  className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-bold text-slate-900"
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-bold text-slate-200"
                 >
                   <option value="">Global / Unassigned</option>
                   {themes.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
@@ -175,7 +184,7 @@ const Profile: React.FC<ProfileProps> = ({ currentUser, themes, onUpdateUser }) 
                 <select
                   value={formData.ownershipType || 'Supporting'}
                   onChange={e => setFormData({ ...formData, ownershipType: e.target.value as OwnershipType })}
-                  className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-bold text-slate-900"
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-bold text-slate-200"
                 >
                   <option value="Owner">Primary Owner</option>
                   <option value="Supporting">Supporting Partner</option>
@@ -190,7 +199,7 @@ const Profile: React.FC<ProfileProps> = ({ currentUser, themes, onUpdateUser }) 
                 <button
                   type="button"
                   onClick={addSupportingPillar}
-                  className="text-[10px] font-bold text-blue-600 uppercase flex items-center gap-1.5 bg-blue-50 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-colors shadow-sm"
+                  className="text-[10px] font-bold text-blue-400 uppercase flex items-center gap-1.5 bg-blue-500/10 px-3 py-1.5 rounded-lg hover:bg-blue-500/20 transition-colors shadow-sm"
                 >
                   <i className="fas fa-plus"></i>
                   Add Supporting Pillar
@@ -199,13 +208,13 @@ const Profile: React.FC<ProfileProps> = ({ currentUser, themes, onUpdateUser }) 
 
               <div className="space-y-3">
                 {(formData.supportingPillars || []).map((support, idx) => (
-                  <div key={idx} className="flex flex-col md:flex-row gap-4 items-end bg-slate-50 p-4 rounded-xl border border-slate-200 animate-in slide-in-from-top-1 duration-200">
+                  <div key={idx} className="flex flex-col md:flex-row gap-4 items-end bg-slate-950 p-4 rounded-xl border border-slate-800 animate-in slide-in-from-top-1 duration-200">
                     <div className="flex-1 space-y-1.5">
                       <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Supporting Pillar</label>
                       <select
                         value={support.themeId}
                         onChange={e => updateSupportingPillar(idx, { themeId: e.target.value })}
-                        className="w-full bg-white border border-slate-300 rounded-lg px-4 py-2.5 text-xs font-bold text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none"
+                        className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-xs font-bold text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"
                       >
                         <option value="">Select Pillar...</option>
                         {themes.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
@@ -216,7 +225,7 @@ const Profile: React.FC<ProfileProps> = ({ currentUser, themes, onUpdateUser }) 
                       <select
                         value={support.type}
                         onChange={e => updateSupportingPillar(idx, { type: e.target.value as OwnershipType })}
-                        className="w-full bg-white border border-slate-300 rounded-lg px-4 py-2.5 text-xs font-bold text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none"
+                        className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-xs font-bold text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"
                       >
                         <option value="Supporting">Supporting</option>
                         <option value="Owner">Co-Owner</option>
@@ -225,14 +234,14 @@ const Profile: React.FC<ProfileProps> = ({ currentUser, themes, onUpdateUser }) 
                     <button
                       type="button"
                       onClick={() => removeSupportingPillar(idx)}
-                      className="p-2.5 text-slate-300 hover:text-rose-500 transition-colors"
+                      className="p-2.5 text-slate-600 hover:text-rose-500 transition-colors"
                     >
                       <i className="fas fa-trash-alt"></i>
                     </button>
                   </div>
                 ))}
                 {(formData.supportingPillars || []).length === 0 && (
-                  <p className="text-center py-6 text-xs text-slate-400 italic font-light border-2 border-dashed border-slate-100 rounded-xl">
+                  <p className="text-center py-6 text-xs text-slate-600 italic font-light border-2 border-dashed border-slate-800 rounded-xl">
                     No additional support pillars defined.
                   </p>
                 )}
@@ -242,9 +251,9 @@ const Profile: React.FC<ProfileProps> = ({ currentUser, themes, onUpdateUser }) 
         </section>
 
         {/* Localization & Social */}
-        <section className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-          <div className="px-8 py-4 border-b border-slate-100 bg-slate-50/50">
-            <h3 className="text-sm font-bold text-slate-800 uppercase tracking-widest">Localization & Social</h3>
+        <section className="bg-slate-900 rounded-2xl shadow-sm border border-slate-800 overflow-hidden">
+          <div className="px-8 py-4 border-b border-slate-800 bg-slate-950/50">
+            <h3 className="text-sm font-bold text-slate-200 uppercase tracking-widest">Localization & Social</h3>
           </div>
           <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-1.5">
@@ -252,7 +261,7 @@ const Profile: React.FC<ProfileProps> = ({ currentUser, themes, onUpdateUser }) 
               <select
                 value={formData.timezone || 'UTC'}
                 onChange={e => setFormData({ ...formData, timezone: e.target.value })}
-                className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-sm text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none font-medium"
+                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none font-medium"
               >
                 <option value="America/New_York">Eastern Time (US & Canada)</option>
                 <option value="America/Chicago">Central Time (US & Canada)</option>
@@ -267,13 +276,13 @@ const Profile: React.FC<ProfileProps> = ({ currentUser, themes, onUpdateUser }) 
             <div className="space-y-1.5">
               <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">LinkedIn Profile</label>
               <div className="relative">
-                <i className="fab fa-linkedin absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                <i className="fab fa-linkedin absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
                 <input
                   type="url"
                   value={formData.linkedinUrl || ''}
                   onChange={e => setFormData({ ...formData, linkedinUrl: e.target.value })}
                   placeholder="https://linkedin.com/in/..."
-                  className="w-full bg-white border border-slate-300 rounded-xl pl-11 pr-4 py-3 text-sm text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none font-medium placeholder:text-slate-400"
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-11 pr-4 py-3 text-sm text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none font-medium placeholder:text-slate-600"
                 />
               </div>
             </div>
@@ -297,17 +306,17 @@ const Profile: React.FC<ProfileProps> = ({ currentUser, themes, onUpdateUser }) 
       </form>
 
       {/* Danger Zone */}
-      <section className="mt-20 pt-12 border-t border-slate-200">
-        <div className="bg-rose-50 border border-rose-100 rounded-2xl p-8 flex flex-col md:flex-row items-center justify-between gap-6">
+      <section className="mt-20 pt-12 border-t border-slate-800">
+        <div className="bg-rose-950/20 border border-rose-900/50 rounded-2xl p-8 flex flex-col md:flex-row items-center justify-between gap-6">
           <div>
-            <h3 className="text-lg font-bold text-rose-900">Danger Zone</h3>
-            <p className="text-sm text-rose-700 font-light mt-1">
+            <h3 className="text-lg font-bold text-rose-500">Danger Zone</h3>
+            <p className="text-sm text-rose-400 font-light mt-1">
               Account deletion is permanent. All your strategic ownership data will be removed.
             </p>
           </div>
           <button
             onClick={() => setShowDeleteModal(true)}
-            className="px-6 py-3 bg-white border-2 border-rose-200 text-rose-600 font-bold rounded-xl hover:bg-rose-600 hover:text-white hover:border-rose-600 transition-all"
+            className="px-6 py-3 bg-slate-950 border-2 border-rose-900/50 text-rose-500 font-bold rounded-xl hover:bg-rose-600 hover:text-white hover:border-rose-600 transition-all"
           >
             Delete Account
           </button>
@@ -316,20 +325,20 @@ const Profile: React.FC<ProfileProps> = ({ currentUser, themes, onUpdateUser }) 
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[100] flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <header className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-rose-50/50">
-              <h3 className="text-xs font-bold text-rose-800 uppercase tracking-widest flex items-center gap-2">
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-slate-900 rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-800">
+            <header className="px-6 py-4 border-b border-slate-800 flex justify-between items-center bg-rose-950/30">
+              <h3 className="text-xs font-bold text-rose-500 uppercase tracking-widest flex items-center gap-2">
                 <i className="fas fa-triangle-exclamation"></i>
                 Verify Permanent Deletion
               </h3>
-              <button onClick={() => setShowDeleteModal(false)} className="text-rose-400 hover:text-rose-600 transition-colors">
+              <button onClick={() => setShowDeleteModal(false)} className="text-rose-400 hover:text-rose-300 transition-colors">
                 <i className="fas fa-times"></i>
               </button>
             </header>
             <div className="p-8 space-y-6">
-              <p className="text-sm text-slate-600 leading-relaxed font-light">
-                This action <strong className="text-slate-900">cannot be undone</strong>. To confirm, please type <span className="font-mono bg-rose-100 px-1.5 py-0.5 rounded text-rose-700 font-bold">delete</span> in the field below.
+              <p className="text-sm text-slate-300 leading-relaxed font-light">
+                This action <strong className="text-white">cannot be undone</strong>. To confirm, please type <span className="font-mono bg-rose-900/50 px-1.5 py-0.5 rounded text-rose-400 font-bold">delete</span> in the field below.
               </p>
 
               <div className="space-y-1.5">
@@ -339,14 +348,14 @@ const Profile: React.FC<ProfileProps> = ({ currentUser, themes, onUpdateUser }) 
                   value={deleteConfirmText}
                   onChange={e => setDeleteConfirmText(e.target.value)}
                   placeholder="Type 'delete' to confirm"
-                  className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-sm text-slate-900 focus:ring-2 focus:ring-rose-500 outline-none font-bold placeholder:text-slate-400 placeholder:font-normal"
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-200 focus:ring-2 focus:ring-rose-500 outline-none font-bold placeholder:text-slate-600 placeholder:font-normal"
                 />
               </div>
 
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowDeleteModal(false)}
-                  className="flex-1 py-3 border border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-50 transition-colors"
+                  className="flex-1 py-3 border border-slate-700 text-slate-400 font-bold rounded-xl hover:bg-slate-800 transition-colors"
                 >
                   Cancel
                 </button>

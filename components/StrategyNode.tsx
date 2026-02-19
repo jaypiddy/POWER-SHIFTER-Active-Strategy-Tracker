@@ -91,7 +91,7 @@ export const StrategyNode: React.FC<StrategyNodeProps> = ({
         if (!onNavigate) return;
 
         if (type === 'bet') {
-            onNavigate(item.id);
+            onNavigate(item.id, 'overview');
         } else if (type === 'task') {
             // Navigate to the parent bet and switch to tasks tab
             onNavigate(item.bet_id, 'tasks');
@@ -112,12 +112,8 @@ export const StrategyNode: React.FC<StrategyNodeProps> = ({
             <div className="flex items-center justify-between mb-2">
                 {/* Header Left */}
                 <div className="flex items-center gap-2 text-slate-400 text-xs font-semibold uppercase tracking-wider">
-                    {type !== 'task' && (
-                        <>
-                            {icons[type]}
-                            <span>{type}</span>
-                        </>
-                    )}
+                    {icons[type]}
+                    <span>{type}</span>
                 </div>
 
                 {/* Header Right */}
@@ -185,11 +181,24 @@ export const StrategyNode: React.FC<StrategyNodeProps> = ({
             )}
 
             {/* Description */}
-            {description ? (
+            {/* Description */}
+            {type === 'task' ? (
+                <div className="mt-2 p-2 bg-slate-900/50 rounded border border-slate-800/50">
+                    <p className={`text-xs line-clamp-3 leading-relaxed ${description ? 'text-slate-300' : 'text-slate-500 italic'}`}>
+                        {description || 'No description provided.'}
+                    </p>
+                </div>
+            ) : description ? (
                 <p className="text-slate-500 text-xs mt-2 line-clamp-2">{description}</p>
-            ) : type === 'task' ? (
-                <p className="text-slate-600 text-[10px] italic mt-1">No description provided.</p>
             ) : null}
+
+            {/* Problem Statement (Bets only) */}
+            {type === 'bet' && item.problem_statement && (
+                <div className="mt-2 p-2 bg-slate-900/50 rounded border border-slate-800/50">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Problem</span>
+                    <p className="text-slate-300 text-xs line-clamp-3 leading-relaxed">{item.problem_statement}</p>
+                </div>
+            )}
 
             {/* Measure Target */}
             {type === 'measure' && (

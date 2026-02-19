@@ -42,11 +42,11 @@ const BetDetail: React.FC<BetDetailProps> = (props) => {
   return (
     <BetDetailProvider {...props} activeTab={activeTab} setActiveTab={setActiveTab}>
       <div
-        className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex justify-end"
+        className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[9999] flex justify-end"
         onClick={props.onClose}
       >
         <div
-          className="w-full max-w-3xl bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300 overscroll-none overflow-hidden"
+          className="w-full max-w-3xl bg-slate-900 h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300 overscroll-none overflow-hidden border-l border-slate-800"
           onClick={(e) => e.stopPropagation()}
         >
 

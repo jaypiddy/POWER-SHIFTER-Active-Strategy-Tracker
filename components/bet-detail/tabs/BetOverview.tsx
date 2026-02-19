@@ -45,7 +45,7 @@ export const BetOverview: React.FC = () => {
 
     return (
         <div className="space-y-6">
-            <section className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+            <section className="bg-slate-900/50 p-4 rounded-xl border border-slate-800">
                 <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Strategic Timeline</label>
                 <div className="grid grid-cols-2 gap-4">
                     <div>
@@ -53,7 +53,7 @@ export const BetOverview: React.FC = () => {
                         <input
                             type="date"
                             disabled={!canEdit}
-                            className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none"
+                            className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:ring-2 focus:ring-blue-500 outline-none"
                             value={localBet.start_date || ''}
                             onChange={(e) => handleChange('start_date', e.target.value, true)}
                         />
@@ -63,7 +63,7 @@ export const BetOverview: React.FC = () => {
                         <input
                             type="date"
                             disabled={!canEdit}
-                            className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none"
+                            className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:ring-2 focus:ring-blue-500 outline-none"
                             value={localBet.completion_date || ''}
                             onChange={(e) => handleChange('completion_date', e.target.value, true)}
                         />
@@ -78,7 +78,7 @@ export const BetOverview: React.FC = () => {
                     value={localBet.problem_statement}
                     onChange={(e) => handleChange('problem_statement', e.target.value)}
                     onBlur={handleBlur}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg p-4 text-sm text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none leading-relaxed font-light"
+                    className="w-full bg-slate-900 border border-slate-800 rounded-lg p-4 text-sm text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none leading-relaxed font-light placeholder:text-slate-600"
                     rows={4}
                 />
             </section>
@@ -90,7 +90,7 @@ export const BetOverview: React.FC = () => {
                         <button
                             onClick={handleTighten}
                             disabled={isTightening}
-                            className="text-[10px] font-bold text-blue-600 uppercase flex items-center gap-1.5 bg-blue-50 px-2 py-1 rounded hover:bg-blue-100 transition-colors"
+                            className="text-[10px] font-bold text-blue-400 uppercase flex items-center gap-1.5 bg-blue-900/30 px-2 py-1 rounded hover:bg-blue-900/50 transition-colors border border-blue-900/50"
                         >
                             <i className={`fas fa-wand-magic-sparkles ${isTightening ? 'animate-spin' : ''}`}></i>
                             Tighten with GPT
@@ -102,7 +102,7 @@ export const BetOverview: React.FC = () => {
                     value={localBet.hypothesis}
                     onChange={(e) => handleChange('hypothesis', e.target.value)}
                     onBlur={handleBlur}
-                    className="w-full bg-blue-50/30 border border-blue-100 rounded-lg p-4 text-sm text-slate-800 font-medium focus:ring-2 focus:ring-blue-500 outline-none leading-relaxed"
+                    className="w-full bg-blue-900/10 border border-blue-900/30 rounded-lg p-4 text-sm text-slate-200 font-medium focus:ring-2 focus:ring-blue-500 outline-none leading-relaxed"
                     rows={4}
                 />
             </section>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { NavLink } from 'react-router-dom';
 import { User } from '../types';
 import {
   PieChart,
@@ -15,34 +16,34 @@ import {
   ChevronRight,
   PanelLeftClose,
   PanelLeftOpen,
-  Search
+  Search,
+  Compass,
+  FileText
 } from 'lucide-react';
 
 interface LayoutProps {
   children: React.ReactNode;
-  activeTab: string;
-  setActiveTab: (tab: string) => void;
   currentUser: User;
   onSwitchRole: (role: User['role']) => void;
 }
 
-const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, currentUser, onSwitchRole }) => {
+const Layout: React.FC<LayoutProps> = ({ children, currentUser, onSwitchRole }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   // Close mobile menu on tab change
-  useEffect(() => {
-    setIsMobileOpen(false);
-  }, [activeTab]);
+  // Close mobile menu on route change could be handled with useLocation, but for now removing the activeTab dependency
+  // useEffect(() => { setIsMobileOpen(false); }, [location]);
 
   const navItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: PieChart },
-    { id: 'explorer', label: 'Strategy Explorer', icon: Search },
-    { id: 'canvas', label: 'Strategy Canvas', icon: Map },
-    { id: 'portfolio', label: 'Strategic Bets', icon: Briefcase },
-    { id: 'outcomes', label: 'Outcomes', icon: Target },
-    { id: 'rhythms', label: 'Rhythms', icon: CalendarCheck },
-    { id: 'team', label: 'Team', icon: Users },
+    { id: 'dashboard', label: 'Dashboard', icon: PieChart, path: '/' },
+    { id: 'explorer', label: 'Strategy Explorer', icon: Search, path: '/explorer' },
+    { id: 'explorer-ii', label: 'Explorer II', icon: Compass, path: '/explorer-ii', badge: 'BETA' },
+    { id: 'canvas', label: 'Strategy Canvas', icon: Map, path: '/canvas' },
+    { id: 'portfolio', label: 'Strategic Bets', icon: Briefcase, path: '/portfolio' },
+    { id: 'outcomes', label: 'Outcomes', icon: Target, path: '/outcomes' },
+    { id: 'rhythms', label: 'Rhythms', icon: CalendarCheck, path: '/rhythms' },
+    { id: 'team', label: 'Team', icon: Users, path: '/team' },
   ];
 
   const toggleSidebar = () => setIsCollapsed(!isCollapsed);
@@ -94,25 +95,31 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, curr
 
         <nav className="flex-1 px-3 py-6 space-y-2 overflow-y-auto overflow-x-hidden scrollbar-hide">
           {navItems.map((item) => (
-            <button
+            <NavLink
               key={item.id}
-              onClick={() => setActiveTab(item.id)}
-              className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 group relative ${activeTab === item.id
+              to={item.path}
+              className={({ isActive }) => `w-full flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 group relative ${isActive
                 ? 'bg-slate-800 text-green-400 border border-slate-700 shadow-sm'
                 : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200 hover:border-slate-800 border border-transparent'
                 }`}
               title={isCollapsed ? item.label : ''}
+              end={item.path === '/'} // Exact match for dashboard
             >
-              <item.icon className={`w-5 h-5 shrink-0 ${activeTab === item.id ? 'text-green-500' : 'text-slate-500'} ${isCollapsed ? '' : ''}`} />
-              {!isCollapsed && <span className="whitespace-nowrap overflow-hidden">{item.label}</span>}
-
-              {/* Tooltip for Collapsed Mode */}
-              {isCollapsed && (
-                <div className="absolute left-full ml-2 px-2 py-1 bg-slate-800 text-slate-200 text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50 border border-slate-700 shadow-xl">
-                  {item.label}
-                </div>
+              {({ isActive }) => (
+                <>
+                  <item.icon className={`w-5 h-5 shrink-0 ${isActive ? 'text-green-500' : 'text-slate-500'} ${isCollapsed ? '' : ''}`} />
+                  {!isCollapsed && (
+                    <div className="flex items-center justify-between flex-1 overflow-hidden">
+                      <span className="whitespace-nowrap">{item.label}</span>
+                      {/* @ts-ignore - dynamic property */}
+                      {item.badge && (
+                        <span className="text-[9px] bg-blue-500/20 text-blue-300 px-1.5 py-0.5 rounded ml-2">{item.badge}</span>
+                      )}
+                    </div>
+                  )}
+                </>
               )}
-            </button>
+            </NavLink>
           ))}
         </nav>
 
@@ -148,15 +155,16 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, curr
 
         {/* User Profile Footer */}
         <div className={`p-4 border-t border-slate-800 space-y-4 ${isCollapsed ? 'flex flex-col items-center' : ''}`}>
-          <button
-            onClick={() => setActiveTab('profile')}
-            className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} px-3 py-2 rounded-lg text-xs font-bold transition-colors outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 ${activeTab === 'profile' ? 'bg-slate-800 text-green-400' : 'text-slate-400 hover:text-white hover:bg-slate-900'
+
+          <NavLink
+            to="/profile"
+            className={({ isActive }) => `w-full flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} px-3 py-2 rounded-lg text-xs font-bold transition-colors outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 ${isActive ? 'bg-slate-800 text-green-400' : 'text-slate-400 hover:text-white hover:bg-slate-900'
               }`}
             title="Profile & Settings"
           >
             <Settings className="w-4 h-4 shrink-0" />
             {!isCollapsed && <span className="whitespace-nowrap">Profile & Settings</span>}
-          </button>
+          </NavLink>
 
           <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} px-1`}>
             <div className="w-8 h-8 rounded-full bg-slate-800 overflow-hidden ring-2 ring-slate-700 shrink-0">

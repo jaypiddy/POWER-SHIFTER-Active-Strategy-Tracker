@@ -1,5 +1,6 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { BrowserRouter, Routes, Route, Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { auth, db } from './services/firebase';
@@ -35,13 +36,15 @@ import BetCreate from './components/BetCreate';
 import UserManagement from './components/UserManagement';
 import Auth from './components/Auth';
 import Profile from './components/Profile';
+import { AppSkeleton } from './components/SkeletonLoader';
 import StrategyExplorer from './components/StrategyExplorer';
+import StrategyExplorerII from './components/StrategyExplorerII';
 import { INITIAL_CANVAS } from './mockData';
 import { THEMES as SEED_THEMES } from './constants';
 import { Bet, User, Comment, RhythmSession, Outcome1Y, Measure, CanvasSnapshot, Canvas as CanvasType, Theme, BetAction } from './types';
 
 const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('dashboard');
+  // const [activeTab, setActiveTab] = useState('dashboard'); // REPLACED BY ROUTER
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [permissionError, setPermissionError] = useState(false);
@@ -159,11 +162,106 @@ const App: React.FC = () => {
     };
   }, [currentUser]);
 
+
   // Derived state: Bets with their tasks populated
-  const populatedBets = bets.map(b => ({
+  const populatedBets = useMemo(() => bets.map(b => ({
     ...b,
     actions: tasks.filter(t => t.bet_id === b.id)
-  }));
+  })), [bets, tasks]);
+
+
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Sync URL Params -> State (Deep Linking)
+  useEffect(() => {
+    const betId = searchParams.get('betId');
+    const outcomeId = searchParams.get('outcomeId');
+    const taskId = searchParams.get('taskId');
+
+    if (betId && bets.length > 0) {
+      const bet = bets.find(b => b.id === betId);
+
+      if (bet && selectedBet?.id !== bet.id) {
+        setSelectedBet(bet);
+        if (taskId) setActiveTaskId(taskId);
+      }
+    } else if (!betId && selectedBet) {
+      // If URL has no betId but state does, it means we might need to clear state 
+      // OR we just navigated here. 
+      // For now, let's treat URL as source of truth ONLY if present, to avoid closing on initial load glitches
+      // But actually, if we want full sync, closing modal should remove param.
+    }
+
+    if (outcomeId && outcomes.length > 0) {
+      const outcome = outcomes.find(o => o.id === outcomeId);
+      if (outcome && selectedOutcome?.id !== outcome.id) {
+        setSelectedOutcome(outcome);
+      }
+    }
+  }, [searchParams, bets, outcomes]);
+
+  // Wrap modal toggles in useCallback (HOISTED HERE TO AVOID EARLY RETURN ISSUES)
+  const openBetModal = useCallback((betId: string, taskId?: string) => {
+    setSearchParams(prev => {
+      const newParams = new URLSearchParams(prev);
+      newParams.set('betId', betId);
+      if (taskId) {
+        newParams.set('taskId', taskId);
+      } else {
+        newParams.delete('taskId');
+      }
+      newParams.delete('outcomeId');
+      return newParams;
+    });
+  }, [setSearchParams]);
+
+  const closeBetModal = useCallback(() => {
+    setSelectedBet(null);
+    setActiveTaskId(undefined);
+    setInitialBetTab(undefined);
+    setSearchParams(prev => {
+      const newParams = new URLSearchParams(prev);
+      newParams.delete('betId');
+      newParams.delete('taskId');
+      return newParams;
+    });
+  }, [setSearchParams]);
+
+  const openOutcomeModal = useCallback((outcomeId: string) => {
+    setSearchParams(prev => {
+      const newParams = new URLSearchParams(prev);
+      newParams.set('outcomeId', outcomeId);
+      newParams.delete('betId');
+      return newParams;
+    });
+  }, [setSearchParams]);
+
+  const closeOutcomeModal = useCallback(() => {
+    setSelectedOutcome(null);
+    setSearchParams(prev => {
+      const newParams = new URLSearchParams(prev);
+      newParams.delete('outcomeId');
+      return newParams;
+    });
+  }, [setSearchParams]);
+
+  const handleNavigate = useCallback((entityId: string, tab?: string) => {
+    // Try to find if it's a bet
+    const bet = bets.find(b => b.id === entityId);
+
+    if (bet) {
+      setInitialBetTab(tab);
+      openBetModal(bet.id);
+      return;
+    }
+    const outcome = outcomes.find(o => o.id === entityId);
+    if (outcome) {
+      openOutcomeModal(outcome.id);
+      navigate('/outcomes');
+      return;
+    }
+  }, [bets, outcomes, navigate, openBetModal, openOutcomeModal]);
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -362,14 +460,7 @@ const App: React.FC = () => {
   };
 
   if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-900">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-slate-400 font-bold text-xs uppercase tracking-widest">Warming Engine...</p>
-        </div>
-      </div>
-    );
+    return <AppSkeleton />;
   }
 
   if (permissionError) {
@@ -404,149 +495,149 @@ const App: React.FC = () => {
     return <Auth />;
   }
 
-  const handleNavigate = (entityId: string, tab?: string) => {
-    // Try to find if it's a bet
-    const bet = bets.find(b => b.id === entityId);
-    if (bet) {
-      setInitialBetTab(tab);
-      setSelectedBet(bet);
-      return;
-    }
-    // Try outcome
-    const outcome = outcomes.find(o => o.id === entityId);
-    if (outcome) {
-      setSelectedOutcome(outcome);
-      setActiveTab('outcomes');
-      return;
-    }
-  };
+  // Modal toggles moved to top of component
 
-  const renderContent = () => {
-    switch (activeTab) {
-      case 'dashboard':
-        return <Dashboard
-          bets={populatedBets}
-          outcomes={outcomes}
-          sessions={sessions}
-          currentUser={currentUser}
-          themes={themes}
-          onNewBet={handleOpenNewBet}
-          onNavigate={handleNavigate}
-        />;
-      case 'explorer':
-        return (
-          <StrategyExplorer
-            outcomes={outcomes}
-            measures={measures}
-            bets={populatedBets}
-            tasks={tasks}
-            users={users}
-            themes={themes}
-            onNavigate={handleNavigate}
-          />
-        );
-      case 'canvas':
-        return (
-          <Canvas
-            canvas={canvas}
-            bets={populatedBets}
-            outcomes={outcomes}
-            currentUser={currentUser}
-            comments={comments}
-            snapshots={snapshots}
-            themes={themes}
-            onUpdateCanvas={handleUpdateCanvas}
-            onUpdateTheme={handleUpdateTheme}
-            onAddComment={(body) => handleAddComment('Canvas', canvas.id, body)}
-            onCreateSnapshot={() => handleCreateSnapshot(canvas)}
-            onNewBet={handleOpenNewBet}
-          />
-        );
-      case 'portfolio':
-        return (
-          <Portfolio
-            bets={populatedBets}
-            users={users}
-            themes={themes}
-            onSelectBet={(bet, taskId) => {
-              setSelectedBet(bet);
-              setActiveTaskId(taskId);
-            }}
-            onNewBet={() => handleOpenNewBet()}
-            onDeleteBet={handleDeleteBet}
-            onArchiveBet={handleArchiveBet}
-            currentUser={currentUser}
-          />
-        );
-      case 'outcomes':
-        return (
-          <Outcomes
-            outcomes={outcomes}
-            measures={measures}
-            users={users}
-            themes={themes}
-            currentUser={currentUser}
-            onSelectOutcome={setSelectedOutcome}
-            onNewOutcome={() => setIsCreatingOutcome(true)}
-          />
-        );
-      case 'rhythms':
-        return (
-          <Rhythms
-            sessions={sessions}
-            bets={populatedBets}
-            currentUser={currentUser}
-            onAddSession={handleAddSession}
-            onUpdateSession={handleUpdateSession}
-            users={users}
-            comments={comments}
-          />
-        );
-      case 'team':
-        return (
-          <UserManagement
-            users={users}
-            themes={themes}
-            currentUser={currentUser}
-            onAddUser={handleAddUser}
-            onUpdateUser={handleUpdateUser}
-          />
-        );
-      case 'profile':
-        return (
-          <Profile
-            currentUser={currentUser}
-            themes={themes}
-            onUpdateUser={handleUpdateUser}
-          />
-        );
-      default:
-        return <Dashboard bets={populatedBets} outcomes={outcomes} sessions={sessions} currentUser={currentUser} themes={themes} onNewBet={handleOpenNewBet} />;
-    }
-  };
 
+
+
+
+  // We need to wrap the internal content in BrowserRouter, but App is the entry point. 
+  // Ideally, main.tsx/index.tsx should hold BrowserRouter, but to be safe we can wrap strictly here 
+  // if we import it. Since I cannot see index.tsx, I will assume App.tsx acts as the main shell.
+
+  // However, I need to Import BrowserRouter first.
+  // Let me split this task. First I will add imports.
+
+  // ... (Aborting this large replace to do safely in steps)
   return (
-    <Layout activeTab={activeTab} setActiveTab={setActiveTab} currentUser={currentUser} onSwitchRole={switchUser}>
-      <div className="flex justify-end mb-4 gap-6">
-        {activeTab === 'profile' && (
-          <button
-            onClick={() => setActiveTab('dashboard')}
-            className="text-[10px] font-bold text-emerald-500 hover:text-emerald-400 uppercase tracking-widest transition-colors flex items-center gap-2"
-          >
-            <i className="fas fa-check"></i>
-            Close Profile
-          </button>
-        )}
-        <button
-          onClick={handleLogout}
-          className="text-[10px] font-bold text-rose-500 hover:text-rose-400 uppercase tracking-widest transition-colors flex items-center gap-2"
-        >
-          <i className="fas fa-sign-out-alt"></i>
-          Logout
-        </button>
-      </div>
+    <>
+      <Layout currentUser={currentUser} onSwitchRole={switchUser}>
+        <div className="flex justify-end mb-4 gap-6">
+          <Routes>
+            <Route path="/profile" element={
+              <Link
+                to="/"
+                className="text-[10px] font-bold text-emerald-500 hover:text-emerald-400 uppercase tracking-widest transition-colors flex items-center gap-2"
+              >
+                <i className="fas fa-check"></i>
+                Close Profile
+              </Link>
+            } />
+          </Routes>
 
-      {renderContent()}
+          <button
+            onClick={handleLogout}
+            className="text-[10px] font-bold text-rose-500 hover:text-rose-400 uppercase tracking-widest transition-colors flex items-center gap-2"
+          >
+            <i className="fas fa-sign-out-alt"></i>
+            Logout
+          </button>
+        </div>
+
+        <Routes>
+          <Route path="/" element={
+            <Dashboard
+              bets={populatedBets}
+              outcomes={outcomes}
+              sessions={sessions}
+              currentUser={currentUser}
+              themes={themes}
+              onNewBet={handleOpenNewBet}
+              onNavigate={handleNavigate}
+            />
+          } />
+          <Route path="/explorer" element={
+            <StrategyExplorer
+              outcomes={outcomes}
+              measures={measures}
+              bets={populatedBets}
+              tasks={tasks}
+              users={users}
+              themes={themes}
+              onNavigate={handleNavigate}
+            />
+          } />
+          <Route path="/explorer-ii" element={
+            <StrategyExplorerII
+              outcomes={outcomes}
+              measures={measures}
+              bets={populatedBets}
+              tasks={tasks}
+              users={users}
+              themes={themes}
+              onNavigate={handleNavigate}
+            />
+          } />
+          <Route path="/canvas" element={
+            <Canvas
+              canvas={canvas}
+              bets={populatedBets}
+              outcomes={outcomes}
+              currentUser={currentUser}
+              comments={comments}
+              snapshots={snapshots}
+              themes={themes}
+              onUpdateCanvas={handleUpdateCanvas}
+              onUpdateTheme={handleUpdateTheme}
+              onAddComment={(body) => handleAddComment('Canvas', canvas.id, body)}
+              onCreateSnapshot={() => handleCreateSnapshot(canvas)}
+              onNewBet={handleOpenNewBet}
+            />
+          } />
+          <Route path="/portfolio" element={
+            <Portfolio
+              bets={populatedBets}
+              users={users}
+              themes={themes}
+              onSelectBet={(bet, taskId) => {
+                openBetModal(bet.id, taskId);
+              }}
+              onNewBet={() => handleOpenNewBet()}
+              onDeleteBet={handleDeleteBet}
+              onArchiveBet={handleArchiveBet}
+              currentUser={currentUser}
+            />
+          } />
+          <Route path="/outcomes" element={
+            <Outcomes
+              outcomes={outcomes}
+              measures={measures}
+              users={users}
+              themes={themes}
+              currentUser={currentUser}
+              onSelectOutcome={(o) => openOutcomeModal(o.id)}
+              onNewOutcome={() => setIsCreatingOutcome(true)}
+            />
+          } />
+          <Route path="/rhythms" element={
+            <Rhythms
+              sessions={sessions}
+              bets={populatedBets}
+              currentUser={currentUser}
+              onAddSession={handleAddSession}
+              onUpdateSession={handleUpdateSession}
+              users={users}
+              comments={comments}
+            />
+          } />
+          <Route path="/team" element={
+            <UserManagement
+              users={users}
+              themes={themes}
+              currentUser={currentUser}
+              onAddUser={handleAddUser}
+              onUpdateUser={handleUpdateUser}
+            />
+          } />
+          <Route path="/profile" element={
+            <Profile
+              currentUser={currentUser}
+              themes={themes}
+              onUpdateUser={handleUpdateUser}
+            />
+          } />
+        </Routes>
+      </Layout>
 
       <AnimatePresence>
         {selectedBet && (
@@ -604,7 +695,7 @@ const App: React.FC = () => {
           outcome={selectedOutcome}
           measures={measures}
           currentUser={currentUser}
-          onClose={() => setSelectedOutcome(null)}
+          onClose={closeOutcomeModal}
           onUpdate={handleUpdateOutcome}
           onAddMeasure={handleAddMeasure}
           onUpdateMeasure={handleUpdateMeasure}
@@ -613,8 +704,14 @@ const App: React.FC = () => {
           users={users}
         />
       )}
-    </Layout>
+    </>
   );
 };
 
-export default App;
+export default function AppWrapper() {
+  return (
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
+  );
+}

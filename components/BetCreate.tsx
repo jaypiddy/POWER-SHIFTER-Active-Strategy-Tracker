@@ -56,27 +56,28 @@ const BetCreate: React.FC<BetCreateProps> = ({ onClose, onCreate, currentUser, t
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
-      <div className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-        <header className={`px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-${selectedTheme?.color || 'slate'}-50/50`}>
+    <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+      <div className="w-full max-w-2xl bg-slate-900 rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-800">
+        <header className={`px-8 py-6 border-b border-slate-800 flex justify-between items-center bg-${selectedTheme?.color || 'slate'}-950/30`}>
           <div>
-            <h2 className="text-xl font-bold text-slate-900 uppercase tracking-tight">New Strategic Bet</h2>
-            <p className="text-sm text-slate-500 font-light mt-0.5">Define your hypothesis-driven strategic investment.</p>
+            <h2 className="text-xl font-bold text-white uppercase tracking-tight">New Strategic Bet</h2>
+            <p className="text-sm text-slate-400 font-light mt-0.5">Define your hypothesis-driven strategic investment.</p>
           </div>
-          <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 transition-colors">
+          <button aria-label="Close" className="p-2 text-slate-400 hover:text-white transition-colors">
             <i className="fas fa-times text-lg"></i>
           </button>
         </header>
 
-        <form onSubmit={handleSubmit} className="p-8 space-y-6 overflow-y-auto max-h-[75vh] no-scrollbar">
+        <form onSubmit={handleSubmit} className="p-8 space-y-6 overflow-y-auto max-h-[75vh] 
+          scrollbar-thin scrollbar-track-slate-800 scrollbar-thumb-slate-600">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="md:col-span-2">
-              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Bet Title</label>
+              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Bet Title</label>
               <input
                 required
                 autoFocus
                 type="text"
-                className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-sm text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none font-bold placeholder:text-slate-400"
+                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:ring-2 focus:ring-blue-500 outline-none font-bold placeholder:text-slate-600"
                 value={formData.title}
                 onChange={e => setFormData({ ...formData, title: e.target.value })}
                 placeholder="e.g., AI strategy copilot integration"
@@ -84,9 +85,9 @@ const BetCreate: React.FC<BetCreateProps> = ({ onClose, onCreate, currentUser, t
             </div>
 
             <div>
-              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Strategic Pillar (Theme)</label>
+              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Strategic Pillar (Theme)</label>
               <select
-                className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-sm text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none font-medium"
+                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:ring-2 focus:ring-blue-500 outline-none font-medium"
                 value={formData.theme_id}
                 onChange={e => setFormData({ ...formData, theme_id: e.target.value })}
               >
@@ -95,9 +96,9 @@ const BetCreate: React.FC<BetCreateProps> = ({ onClose, onCreate, currentUser, t
             </div>
 
             <div>
-              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Bet Type</label>
+              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Bet Type</label>
               <select
-                className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-sm text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none font-medium"
+                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:ring-2 focus:ring-blue-500 outline-none font-medium"
                 value={formData.bet_type}
                 onChange={e => setFormData({ ...formData, bet_type: e.target.value as BetType })}
               >
@@ -108,23 +109,23 @@ const BetCreate: React.FC<BetCreateProps> = ({ onClose, onCreate, currentUser, t
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 bg-slate-50 rounded-xl border border-slate-200">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 bg-slate-950/50 rounded-xl border border-slate-800">
             <div>
-              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Start Date</label>
+              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Start Date</label>
               <input
                 type="date"
                 required
-                className="w-full bg-white border border-slate-300 rounded-lg px-4 py-2 text-sm text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none"
+                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-sm text-white focus:ring-2 focus:ring-blue-500 outline-none"
                 value={formData.start_date}
                 onChange={e => setFormData({ ...formData, start_date: e.target.value })}
               />
             </div>
             <div>
-              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">End Date (Target)</label>
+              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">End Date (Target)</label>
               <input
                 type="date"
                 required
-                className="w-full bg-white border border-slate-300 rounded-lg px-4 py-2 text-sm text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none"
+                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-sm text-white focus:ring-2 focus:ring-blue-500 outline-none"
                 value={formData.completion_date}
                 onChange={e => setFormData({ ...formData, completion_date: e.target.value })}
               />
@@ -132,10 +133,10 @@ const BetCreate: React.FC<BetCreateProps> = ({ onClose, onCreate, currentUser, t
           </div>
 
           <div>
-            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Problem Statement</label>
+            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Problem Statement</label>
             <textarea
               required
-              className="w-full bg-white border border-slate-300 rounded-xl p-4 text-sm text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none leading-relaxed font-normal placeholder:text-slate-400"
+              className="w-full bg-slate-950 border border-slate-700 rounded-xl p-4 text-sm text-white focus:ring-2 focus:ring-blue-500 outline-none leading-relaxed font-normal placeholder:text-slate-600"
               rows={3}
               value={formData.problem_statement}
               onChange={e => setFormData({ ...formData, problem_statement: e.target.value })}
@@ -145,9 +146,9 @@ const BetCreate: React.FC<BetCreateProps> = ({ onClose, onCreate, currentUser, t
 
           <div className="grid grid-cols-2 gap-6">
             <div>
-              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Timebox Horizon</label>
+              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Timebox Horizon</label>
               <select
-                className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-sm text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none"
+                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:ring-2 focus:ring-blue-500 outline-none"
                 value={formData.timebox}
                 onChange={e => setFormData({ ...formData, timebox: e.target.value as BetTimebox })}
               >
@@ -155,9 +156,9 @@ const BetCreate: React.FC<BetCreateProps> = ({ onClose, onCreate, currentUser, t
               </select>
             </div>
             <div>
-              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Initial Size (Effort)</label>
+              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Initial Size (Effort)</label>
               <select
-                className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-sm text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none"
+                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:ring-2 focus:ring-blue-500 outline-none"
                 value={formData.tshirt_size}
                 onChange={e => setFormData({ ...formData, tshirt_size: e.target.value as TshirtSize })}
               >
@@ -173,13 +174,13 @@ const BetCreate: React.FC<BetCreateProps> = ({ onClose, onCreate, currentUser, t
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-4 border border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-50 transition-all"
+              className="flex-1 py-4 border border-slate-700 text-slate-400 font-bold rounded-xl hover:bg-slate-800 hover:text-white transition-all"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className={`flex-1 py-4 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 shadow-xl shadow-slate-900/20 transition-all active:scale-95 flex items-center justify-center gap-2`}
+              className={`flex-1 py-4 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-500 shadow-xl shadow-blue-900/20 transition-all active:scale-95 flex items-center justify-center gap-2`}
             >
               <i className="fas fa-rocket text-xs"></i>
               Commit to Bet
